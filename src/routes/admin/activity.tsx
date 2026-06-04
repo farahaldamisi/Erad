@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getActivityStats } from "@/lib/activity";
+import { formatActivityEventLabel } from "@/components/admin/AdminLowStockBanner";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { useActivityLog } from "@/hooks/use-activity-log";
 import { useI18n } from "@/lib/i18n";
@@ -55,7 +56,11 @@ function AdminActivityPage() {
                   {event.userName ?? t("guest_visitor")}
                   {event.userEmail ? ` · ${event.userEmail}` : ""}
                 </p>
-                {event.label && <p className="text-sm text-muted-foreground mt-0.5">{event.label}</p>}
+                {event.label && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {formatActivityEventLabel(event, t) ?? event.label}
+                  </p>
+                )}
                 {event.path && <p className="text-xs text-muted-foreground mt-0.5">{event.path}</p>}
                 {event.meta && Object.keys(event.meta).length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">

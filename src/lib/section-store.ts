@@ -1,4 +1,11 @@
-import { normalizeSection, seedSections, sortSections, type Section } from "./sections";
+import {
+  migrateSectionImages,
+  migrateSeedSections,
+  normalizeSection,
+  seedSections,
+  sortSections,
+  type Section,
+} from "./sections";
 
 const STORAGE_KEY = "erad_sections_v1";
 
@@ -7,7 +14,9 @@ export function loadSections(): Section[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return seedSections;
-    return sortSections((JSON.parse(raw) as Section[]).map(normalizeSection));
+    return sortSections(
+      migrateSeedSections(migrateSectionImages((JSON.parse(raw) as Section[]).map(normalizeSection))),
+    );
   } catch {
     return seedSections;
   }

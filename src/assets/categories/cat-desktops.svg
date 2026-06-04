@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#F4F6F8"/>
+  <rect x="250" y="80" width="300" height="220" rx="20" fill="#1A1D21"/>
+  <rect x="250" y="80" width="300" height="220" rx="20" fill="url(#monitor)" opacity="0.9"/>
+  <rect x="360" y="300" width="80" height="60" rx="8" fill="#DDE3EA"/>
+  <rect x="300" y="360" width="200" height="16" rx="8" fill="#C5CDD6"/>
+  <ellipse cx="400" cy="390" rx="120" ry="8" fill="#E8ECF0"/>
+  <rect x="180" y="420" width="440" height="8" rx="4" fill="#E8ECF0"/>
+  <defs>
+    <linearGradient id="monitor" x1="250" y1="80" x2="550" y2="300">
+      <stop stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#6366F1"/>
+    </linearGradient>
+  </defs>
+</svg>

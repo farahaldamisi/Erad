@@ -1,6 +1,7 @@
 export const ERAD_PHONE = "0793315007";
 export const ERAD_PHONE_WHATSAPP = "962793315007";
 export const ERAD_EMAIL = "info@erad.com";
+export const ERAD_FACEBOOK_URL = "https://www.facebook.com/EradMall.jo";
 
 export const ERAD_ADDRESS = "Amman, Jordan";
 export const ERAD_ADDRESS_AR = "عمان، الأردن";

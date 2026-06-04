@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { SpecEditor } from "@/components/SpecEditor";
-import { OverviewGalleryEditor } from "@/components/OverviewGalleryEditor";
+import { ProductImageGalleryEditor } from "@/components/ProductImageGalleryEditor";
 import { normalizeProduct, isLaptopLikeSection, type Product, type SpecGroup } from "@/lib/products";
 import { createLaptopSpecTemplate, mergeWithLaptopTemplate } from "@/lib/spec-templates";
 import { useProducts } from "@/lib/products-context";
@@ -44,6 +44,9 @@ export function ProductForm({
   const [stock, setStock] = useState(initial?.stock ?? 0);
   const [category, setCategory] = useState(defaultCategory);
   const [overview, setOverview] = useState(initial?.overview ?? "");
+  const [gallery, setGallery] = useState<string[]>(() =>
+    initial?.gallery?.length ? initial.gallery : initial?.image ? [initial.image] : [],
+  );
   const [overviewGallery, setOverviewGallery] = useState<string[]>(initial?.overviewGallery ?? []);
   const [specs, setSpecs] = useState<SpecGroup[]>(() =>
     initialSpecs(initial, defaultCategory),
@@ -68,6 +71,8 @@ export function ProductForm({
             .filter(g => g.items.length > 0)
         : specs;
 
+    const coverImage = gallery[0] ?? initial?.image ?? "";
+
     onSave(
       normalizeProduct({
         id: initial?.id ?? `new-${Date.now()}`,
@@ -79,8 +84,8 @@ export function ProductForm({
         category,
         subcategory: initial?.subcategory ?? "standard",
         subcategoryAr: initial?.subcategoryAr ?? "عادي",
-        image: initial?.image ?? "",
-        gallery: initial?.gallery ?? [],
+        image: coverImage,
+        gallery,
         overview,
         overviewAr: overview,
         overviewGallery,
@@ -125,8 +130,13 @@ export function ProductForm({
           </Field>
 
           <div className="sm:col-span-2 space-y-3">
+            <h3 className="font-bold text-lg">{t("product_gallery")}</h3>
+            <ProductImageGalleryEditor images={gallery} onChange={setGallery} variant="product" />
+          </div>
+
+          <div className="sm:col-span-2 space-y-3">
             <h3 className="font-bold text-lg">{t("overview_images")}</h3>
-            <OverviewGalleryEditor images={overviewGallery} onChange={setOverviewGallery} />
+            <ProductImageGalleryEditor images={overviewGallery} onChange={setOverviewGallery} variant="overview" />
           </div>
 
           {isLaptopLikeSection(category) && (

@@ -4,6 +4,7 @@ import { Edit3, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { normalizeProduct, type Product } from "@/lib/products";
 import { filterProducts, groupProductsBySection, type ProductSearchParams } from "@/lib/product-filters";
+import { maybeLogLowStockAlert } from "@/lib/stock-alerts";
 import { formatPrice } from "@/lib/currency";
 import { formatNumber } from "@/lib/format";
 import { getSectionLabel, sortSections } from "@/lib/sections";
@@ -39,7 +40,18 @@ function AdminProductsPage() {
 
   const removeP = (id: string) => setList(l => l.filter(p => p.id !== id));
   const saveP = (p: Product) => {
-    setList(l => (edit ? l.map(x => (x.id === p.id ? normalizeProduct(p) : x)) : [normalizeProduct(p), ...l]));
+    const previous = edit ? list.find(x => x.id === p.id) : null;
+    const normalized = normalizeProduct(p);
+    setList(l => (edit ? l.map(x => (x.id === p.id ? normalized : x)) : [normalized, ...l]));
+    maybeLogLowStockAlert({
+      productId: normalized.id,
+      productName: normalized.name,
+      previousStock: previous?.stock ?? normalized.stock,
+      newStock: normalized.stock,
+      brand: normalized.brand,
+      category: normalized.category,
+      subcategory: normalized.subcategory,
+    });
     setShowForm(false);
     setEdit(null);
     setAddSectionId(undefined);

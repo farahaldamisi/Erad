@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
-  Activity,
-  Eye,
+  Banknote,
+  CalendarDays,
   Package,
   ShoppingBag,
   TrendingUp,
@@ -11,13 +11,16 @@ import {
 } from "lucide-react";
 import { listRegisteredCustomers } from "@/lib/auth-store";
 import { getSiteAnalytics } from "@/lib/admin-analytics";
-import { mockOrders } from "@/lib/admin-route";
 import { resolveSectionLabel } from "@/lib/sections";
+import { formatOrderNumber, sortOrdersNewestFirst } from "@/lib/orders";
 import { formatPrice } from "@/lib/currency";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { useActivityLog } from "@/hooks/use-activity-log";
 import { useProducts } from "@/lib/products-context";
 import { useServiceRequestsCtx } from "@/lib/service-requests-context";
+import { useOrdersCtx } from "@/lib/orders-context";
+import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { formatActivityEventLabel } from "@/components/admin/AdminLowStockBanner";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/")({
@@ -29,28 +32,33 @@ function AdminOverviewPage() {
   const { t, lang } = useI18n();
   const { products, sections } = useProducts();
   const { requests: serviceRequests } = useServiceRequestsCtx();
+  const { orders } = useOrdersCtx();
   const { activities } = useActivityLog();
   const registeredCustomers = listRegisteredCustomers();
-  const pendingMockOrders = mockOrders.filter(o => o.status === "Pending").length;
 
   const analytics = getSiteAnalytics(
     activities,
     products,
     serviceRequests,
+    orders,
     registeredCustomers.length,
-    mockOrders.length,
-    pendingMockOrders,
   );
+  const recentOrders = sortOrdersNewestFirst(orders).slice(0, 4);
 
   const statCards = [
-    { icon: Eye, label: t("total_visitors"), value: analytics.visitors, color: "from-sky-500 to-blue-700" },
-    { icon: Activity, label: t("page_views"), value: analytics.pageViews, color: "from-indigo-500 to-violet-700" },
     { icon: Users, label: t("registered_accounts"), value: analytics.registeredUsers, color: "from-emerald-500 to-teal-700" },
     { icon: Package, label: t("total_products"), value: analytics.totalProducts, color: "from-red-500 to-red-700" },
     { icon: TrendingUp, label: t("admin_product_views"), value: analytics.productViews, color: "from-orange-500 to-amber-700" },
+    { icon: CalendarDays, label: t("admin_daily_visits"), value: analytics.dailyVisits, color: "from-sky-500 to-blue-700" },
     { icon: ShoppingBag, label: t("admin_orders_submitted"), value: analytics.ordersSubmitted, color: "from-pink-500 to-rose-700" },
     { icon: Wrench, label: t("pending_services"), value: analytics.pendingServices, color: "from-cyan-500 to-sky-700" },
-    { icon: Activity, label: t("total_activities"), value: analytics.totalActivities, color: "from-violet-500 to-purple-700" },
+    {
+      icon: Banknote,
+      label: t("admin_total_sales"),
+      value: analytics.totalSales,
+      color: "from-violet-500 to-purple-700",
+      isPrice: true,
+    },
   ];
 
   return (
@@ -60,7 +68,7 @@ function AdminOverviewPage() {
         <p className="text-muted-foreground mt-1">{t("admin_overview_sub")}</p>
       </div>
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
         {statCards.map((card, idx) => (
           <motion.div
             key={card.label}
@@ -71,7 +79,9 @@ function AdminOverviewPage() {
           >
             <card.icon className="absolute -right-2 -bottom-2 size-20 opacity-15" />
             <p className="text-xs uppercase tracking-wider opacity-90">{card.label}</p>
-            <p className="text-3xl font-bold mt-2">{formatNumber(card.value)}</p>
+            <p className="text-2xl sm:text-3xl font-bold mt-2">
+              {"isPrice" in card && card.isPrice ? formatPrice(card.value, lang) : formatNumber(card.value)}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -162,7 +172,9 @@ function AdminOverviewPage() {
                       {formatDateTime(event.createdAt, lang)}
                     </span>
                   </div>
-                  <p className="text-sm font-medium">{event.label ?? event.path ?? t("guest_visitor")}</p>
+                  <p className="text-sm font-medium">
+                    {formatActivityEventLabel(event, t) ?? event.label ?? event.path ?? t("guest_visitor")}
+                  </p>
                 </div>
               ))}
             </div>
@@ -178,20 +190,24 @@ function AdminOverviewPage() {
           </Link>
         </div>
         <div className="divide-y divide-border">
-          {mockOrders.slice(0, 4).map(order => (
-            <div key={order.id} className="px-5 py-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="font-semibold text-sm">{order.customer}</p>
-                <p className="text-xs text-muted-foreground">{order.product}</p>
+          {recentOrders.length === 0 ? (
+            <p className="px-5 py-10 text-center text-muted-foreground text-sm">{t("orders_empty")}</p>
+          ) : (
+            recentOrders.map(order => (
+              <div key={order.id} className="px-5 py-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-sm">{order.customerName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatOrderNumber(order.id)} · {order.items.map(i => i.name).join(", ")}
+                  </p>
+                </div>
+                <div className="text-end">
+                  <p className="font-bold text-sm">{formatPrice(order.total, lang)}</p>
+                  <OrderStatusBadge status={order.status} />
+                </div>
               </div>
-              <div className="text-end">
-                <p className="font-bold text-sm">{formatPrice(order.total, lang)}</p>
-                <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
-                  {order.status}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
     </div>

@@ -1,7 +1,5 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { OrderForm } from "@/components/OrderForm";
 import { formatPrice } from "@/lib/currency";
 import { formatNumber } from "@/lib/format";
@@ -26,7 +24,7 @@ function CheckoutPage() {
   const { t, lang } = useI18n();
   const { items, clear } = useCart();
   const { products } = useProducts();
-  const [submitted, setSubmitted] = useState(false);
+  const nav = useNavigate();
 
   const lines = items
     .map(item => {
@@ -54,33 +52,13 @@ function CheckoutPage() {
     items: lines.map(({ item, product }) => ({
       productId: product.id,
       name: getProductName(product),
+      brand: product.brand,
       quantity: item.quantity,
+      unitPrice: product.price,
       lineTotal: product.price * item.quantity,
     })),
     total,
   };
-
-  if (submitted) {
-    return (
-      <div className="container mx-auto px-4 py-20 max-w-lg">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-card border border-border rounded-3xl p-10 text-center shadow-elegant"
-        >
-          <CheckCircle2 className="size-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">{t("order_success")}</h1>
-          <p className="text-muted-foreground mb-8">{t("order_success_sub")}</p>
-          <Link
-            to="/products"
-            className="inline-flex h-11 px-6 items-center rounded-full bg-primary text-primary-foreground font-semibold shadow-glow"
-          >
-            {t("continue_shopping")}
-          </Link>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-2xl">
@@ -105,7 +83,7 @@ function CheckoutPage() {
           cartSummary={cartSummary}
           onSuccess={() => {
             clear();
-            setSubmitted(true);
+            nav({ to: "/my-orders", replace: true });
           }}
         />
         {!allInStock && (

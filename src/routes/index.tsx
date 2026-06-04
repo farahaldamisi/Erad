@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { ArrowRight, Wrench, Network, ShieldCheck, BadgeCheck, Gift } from "lucide-react";
+import { ArrowRight, Wrench, Network, ShieldCheck, BadgeCheck, Gift, X, Users } from "lucide-react";
 import { useProducts } from "@/lib/products-context";
 import { ProductCard } from "@/components/ProductCard";
 import { getSectionLabel, sortSections } from "@/lib/sections";
@@ -10,7 +10,14 @@ import hero1 from "@/assets/hero-laptop.jpg";
 import hero2 from "@/assets/hero-store.jpg";
 import hero3 from "@/assets/hero-components.jpg";
 
+interface HomeSearch {
+  welcome?: "login" | "register";
+}
+
 export const Route = createFileRoute("/")({
+  validateSearch: (s: Record<string, unknown>): HomeSearch => ({
+    welcome: s.welcome === "login" || s.welcome === "register" ? s.welcome : undefined,
+  }),
   head: () => ({ meta: [{ title: "ERAD — Premium Computer Trading" }] }),
   component: Home,
 });
@@ -37,14 +44,34 @@ const heroSlides = [
     sub: "hero_slide_gifts_sub",
     icon: Gift,
   },
+  {
+    image: hero1,
+    badge: "hero_slide_team_badge",
+    title: "hero_slide_team_title",
+    sub: "hero_slide_team_sub",
+    icon: Users,
+  },
 ] as const;
 
 function Home() {
   const { t, lang } = useI18n();
   const { products, sections } = useProducts();
+  const search = Route.useSearch();
+  const nav = Route.useNavigate();
+  const [showWelcome, setShowWelcome] = useState(Boolean(search.welcome));
   const [i, setI] = useState(0);
   const slide = heroSlides[i];
   const featuredSections = sortSections(sections);
+
+  useEffect(() => {
+    if (!search.welcome) return;
+    setShowWelcome(true);
+    const timer = window.setTimeout(() => {
+      setShowWelcome(false);
+      nav({ search: {}, replace: true });
+    }, 5000);
+    return () => window.clearTimeout(timer);
+  }, [search.welcome, nav]);
 
   useEffect(() => {
     const id = setInterval(() => setI(x => (x + 1) % heroSlides.length), 4500);
@@ -59,6 +86,34 @@ function Home() {
 
   return (
     <>
+      <AnimatePresence>
+        {showWelcome && search.welcome && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="fixed top-20 inset-x-4 z-[60] mx-auto max-w-lg"
+          >
+            <div className="flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary text-primary-foreground px-4 py-3 shadow-elegant">
+              <p className="text-sm font-medium leading-snug flex-1">
+                {search.welcome === "register" ? t("welcome_register_msg") : t("welcome_login_msg")}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowWelcome(false);
+                  nav({ search: {}, replace: true });
+                }}
+                className="shrink-0 rounded-full p-1 hover:bg-white/15 transition"
+                aria-label={t("cancel")}
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* HERO */}
       <section className="relative h-[88vh] min-h-[600px] overflow-hidden -mt-16">
         {heroSlides.map((s, idx) => (
@@ -143,7 +198,7 @@ function Home() {
           <h2 className="text-4xl sm:text-5xl font-bold mb-3">{t("featured")}</h2>
           <p className="text-muted-foreground">{t("featured_sub")}</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {cats.map((c, idx) => (
             <motion.div key={c.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.08 }}>
               <Link
@@ -151,14 +206,13 @@ function Home() {
                 search={{ category: c.id }}
                 className="group block bg-card border border-border rounded-2xl overflow-hidden shadow-card hover:shadow-glow hover:border-primary/40 hover:-translate-y-1 transition-all"
               >
-                <div className="aspect-[4/3] overflow-hidden bg-subtle relative">
+                <div className="aspect-square overflow-hidden bg-white p-5 sm:p-6 border-b border-border/60">
                   <img
                     src={c.image}
                     alt={c.label}
                     loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-sm"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
                 </div>
                 <div className="px-3 py-4 text-center">
                   <div className="font-semibold text-sm group-hover:text-primary transition-colors">{c.label}</div>

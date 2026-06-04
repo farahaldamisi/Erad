@@ -1,5 +1,6 @@
 import type { ActivityEvent } from "@/lib/activity";
 import { getActivityStats } from "@/lib/activity";
+import type { Order } from "@/lib/orders";
 import type { Product } from "@/lib/products";
 import type { ServiceRequest } from "@/lib/services";
 
@@ -17,11 +18,13 @@ export interface CategoryCount {
 export interface SiteAnalytics {
   visitors: number;
   pageViews: number;
+  dailyVisits: number;
   registrations: number;
   logins: number;
   totalActivities: number;
   productViews: number;
   ordersSubmitted: number;
+  totalSales: number;
   serviceRequestsLogged: number;
   totalProducts: number;
   inStockProducts: number;
@@ -32,8 +35,8 @@ export interface SiteAnalytics {
   pendingServices: number;
   inProgressServices: number;
   completedServices: number;
-  mockOrdersCount: number;
-  pendingMockOrders: number;
+  totalOrders: number;
+  pendingOrders: number;
   topProducts: TopProductView[];
   productsByCategory: CategoryCount[];
   recentActivities: ActivityEvent[];
@@ -43,9 +46,8 @@ export function getSiteAnalytics(
   activities: ActivityEvent[],
   products: Product[],
   serviceRequests: ServiceRequest[],
+  orders: Order[],
   registeredUsersCount: number,
-  mockOrdersCount: number,
-  pendingMockOrders: number,
 ): SiteAnalytics {
   const base = getActivityStats(activities);
   const productViewEvents = activities.filter(a => a.type === "product_view");
@@ -72,14 +74,26 @@ export function getSiteAnalytics(
     categoryMap.set(product.category, (categoryMap.get(product.category) ?? 0) + 1);
   }
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const dailyVisits = activities.filter(
+    a => a.type === "page_view" && new Date(a.createdAt) >= todayStart,
+  ).length;
+
+  const totalSales = orders
+    .filter(o => o.status !== "cancelled")
+    .reduce((sum, o) => sum + o.total, 0);
+
   return {
     visitors: base.uniqueVisitors,
     pageViews: base.pageViews,
+    dailyVisits,
     registrations: base.registrations,
     logins: base.logins,
     totalActivities: base.total,
     productViews: productViewEvents.length,
-    ordersSubmitted: activities.filter(a => a.type === "order_submit").length,
+    ordersSubmitted: orders.length,
+    totalSales,
     serviceRequestsLogged: activities.filter(a => a.type === "service_request").length,
     totalProducts: products.length,
     inStockProducts: products.filter(p => p.stock > 0).length,
@@ -90,8 +104,8 @@ export function getSiteAnalytics(
     pendingServices: serviceRequests.filter(r => r.status === "pending").length,
     inProgressServices: serviceRequests.filter(r => r.status === "in_progress").length,
     completedServices: serviceRequests.filter(r => r.status === "completed").length,
-    mockOrdersCount,
-    pendingMockOrders,
+    totalOrders: orders.length,
+    pendingOrders: orders.filter(o => o.status === "received").length,
     topProducts,
     productsByCategory: [...categoryMap.entries()].map(([category, count]) => ({ category, count })),
     recentActivities: activities.slice(0, 8),

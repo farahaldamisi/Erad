@@ -21,7 +21,7 @@ export const Route = createFileRoute("/login")({
     if (typeof window === "undefined") return;
     const user = getSessionUser();
     if (user) {
-      throw redirect({ to: user.role === "admin" ? "/admin" : "/account" });
+      throw redirect({ to: user.role === "admin" ? "/admin" : "/" });
     }
   },
   head: () => ({ meta: [{ title: "Sign in — ERAD" }] }),
@@ -60,14 +60,12 @@ function LoginPage() {
     return map[code] ?? t("auth_invalid");
   };
 
-  const afterAuth = (role: "admin" | "customer") => {
-    const safe =
-      redirectTo?.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : undefined;
-    if (safe) {
-      window.location.href = safe;
+  const afterAuth = (role: "admin" | "customer", kind: "login" | "register") => {
+    if (role === "admin") {
+      nav({ to: "/admin" });
       return;
     }
-    nav({ to: role === "admin" ? "/admin" : "/account" });
+    nav({ to: "/", search: { welcome: kind } });
   };
 
   const onSignIn = async (e: React.FormEvent) => {
@@ -82,7 +80,7 @@ function LoginPage() {
     }
     const { getSessionUser } = await import("@/lib/auth-store");
     const user = getSessionUser();
-    afterAuth(user?.role ?? "customer");
+    afterAuth(user?.role ?? "customer", "login");
   };
 
   const onRegister = async (e: React.FormEvent) => {
@@ -95,7 +93,7 @@ function LoginPage() {
       setErr(errorMessage(result.code));
       return;
     }
-    afterAuth("customer");
+    afterAuth("customer", "register");
   };
 
   const switchMode = (next: "signin" | "register") => {

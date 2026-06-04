@@ -19,6 +19,7 @@ function parseSearch(raw: Record<string, unknown>): Search {
     sub: typeof raw.sub === "string" ? raw.sub : undefined,
     brand: typeof raw.brand === "string" ? raw.brand : undefined,
     inStock: raw.inStock === true || raw.inStock === "true",
+    outOfStock: raw.outOfStock === true || raw.outOfStock === "true",
     sort: (raw.sort as Search["sort"]) ?? "newest",
     q: typeof raw.q === "string" ? raw.q : undefined,
     minPrice: min != null && !Number.isNaN(min) ? min : undefined,
@@ -38,19 +39,30 @@ function ProductsPage() {
   const nav = Route.useNavigate();
   const { t, lang } = useI18n();
 
+  const categorySelected = Boolean(search.category && search.category !== "all");
+
   const sortedSections = useMemo(() => sortSections(sections), [sections]);
   const brands = useMemo(() => Array.from(new Set(products.map(p => p.brand))).sort(), [products]);
   const subs = useMemo(() => {
-    const scoped =
-      search.category && search.category !== "all"
-        ? products.filter(p => p.category === search.category)
-        : products;
+    if (!categorySelected) return [];
+    const scoped = products.filter(p => p.category === search.category);
     return Array.from(
       new Set(scoped.map(p => JSON.stringify({ en: p.subcategory, ar: p.subcategoryAr }))),
     ).map(s => JSON.parse(s) as { en: string; ar: string });
-  }, [products, search.category]);
+  }, [products, search.category, categorySelected]);
 
   const filtered = useMemo(() => filterProducts(products, search), [products, search]);
+  const stockCounts = useMemo(() => {
+    const base = filterProducts(products, {
+      ...search,
+      inStock: undefined,
+      outOfStock: undefined,
+    });
+    return {
+      inStock: base.filter(p => p.stock > 0).length,
+      outOfStock: base.filter(p => p.stock <= 0).length,
+    };
+  }, [products, search]);
 
   const updateSearch = (patch: Partial<Search>) => {
     const next: Search = { ...search, ...patch, category: patch.category ?? search.category ?? "all", sort: patch.sort ?? search.sort ?? "newest" };
@@ -59,6 +71,7 @@ function ProductsPage() {
     if (!next.brand) delete next.brand;
     if (!next.sub) delete next.sub;
     if (!next.inStock) delete next.inStock;
+    if (!next.outOfStock) delete next.outOfStock;
     if (next.minPrice == null || Number.isNaN(next.minPrice)) delete next.minPrice;
     if (next.maxPrice == null || Number.isNaN(next.maxPrice)) delete next.maxPrice;
     nav({ search: next });
@@ -123,7 +136,7 @@ function ProductsPage() {
             <h3 className="font-bold text-lg">{t("filter")}</h3>
           </div>
 
-          {subs.length > 0 && (
+          {categorySelected && subs.length > 0 && (
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
                 {t("subcategory")}
@@ -152,20 +165,30 @@ function ProductsPage() {
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
-              {t("brand_label")}
+              {t("stock")}
             </label>
-            <select
-              value={search.brand ?? ""}
-              onChange={e => updateSearch({ brand: e.target.value })}
-              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-            >
-              <option value="">{t("all")}</option>
-              {brands.map(b => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={search.inStock ?? false}
+                  onChange={e => updateSearch({ inStock: e.target.checked })}
+                  className="size-4 accent-primary"
+                />
+                <span className="text-sm flex-1">{t("in_stock")}</span>
+                <span className="text-xs text-muted-foreground">({formatNumber(stockCounts.inStock)})</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={search.outOfStock ?? false}
+                  onChange={e => updateSearch({ outOfStock: e.target.checked })}
+                  className="size-4 accent-primary"
+                />
+                <span className="text-sm flex-1">{t("out_stock")}</span>
+                <span className="text-xs text-muted-foreground">({formatNumber(stockCounts.outOfStock)})</span>
+              </label>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -199,15 +222,23 @@ function ProductsPage() {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={search.inStock ?? false}
-              onChange={e => updateSearch({ inStock: e.target.checked })}
-              className="size-4 accent-primary"
-            />
-            <span className="text-sm">{t("in_stock")}</span>
-          </label>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
+              {t("brand_label")}
+            </label>
+            <select
+              value={search.brand ?? ""}
+              onChange={e => updateSearch({ brand: e.target.value })}
+              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+            >
+              <option value="">{t("all")}</option>
+              {brands.map(b => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">

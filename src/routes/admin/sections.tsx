@@ -62,9 +62,9 @@ function AdminSectionsPage() {
           const label = lang === "ar" ? section.nameAr || section.name : section.name;
           return (
             <div key={section.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
-              <div className="aspect-[16/10] bg-subtle overflow-hidden">
+              <div className="aspect-square bg-white overflow-hidden p-4 border-b border-border/60">
                 {section.image ? (
-                  <img src={section.image} alt={label} className="w-full h-full object-cover" />
+                  <img src={section.image} alt={label} className="w-full h-full object-contain" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <FolderOpen className="size-10 opacity-40" />

@@ -16,8 +16,7 @@ export function Footer() {
 
       <div className="container mx-auto px-4 py-12 grid gap-8 md:grid-cols-4 border-t border-border">
         <div>
-          <img src={logo} alt="ERAD" className="h-14 mb-3" />
-          <p className="text-sm text-muted-foreground">{t("tagline")}</p>
+          <img src={logo} alt="ERAD" className="h-20 sm:h-24 w-auto max-w-[220px] sm:max-w-[260px] object-contain" />
         </div>
         <div>
           <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider">{t("nav_products")}</h4>

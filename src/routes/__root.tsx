@@ -14,10 +14,12 @@ import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
 import { ProductsProvider } from "@/lib/products-context";
 import { ServiceRequestsProvider } from "@/lib/service-requests-context";
+import { OrdersProvider } from "@/lib/orders-context";
 import { CartProvider } from "@/lib/cart-context";
 import { ActivityTracker } from "@/components/ActivityTracker";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { FloatingSocialButtons } from "@/components/FloatingSocialButtons";
 
 function NotFoundComponent() {
   return (
@@ -91,14 +93,17 @@ function RootComponent() {
         <AuthProvider>
           <ProductsProvider>
             <ServiceRequestsProvider>
-              <CartProvider>
-                <ActivityTracker />
-                <div className="min-h-screen flex flex-col">
-                  <Navbar />
-                  <main className="flex-1 pt-16"><Outlet /></main>
-                  <Footer />
-                </div>
-              </CartProvider>
+              <OrdersProvider>
+                <CartProvider>
+                  <ActivityTracker />
+                  <div className="min-h-screen flex flex-col">
+                    <Navbar />
+                    <main className="flex-1 pt-16"><Outlet /></main>
+                    <FloatingSocialButtons />
+                    <Footer />
+                  </div>
+                </CartProvider>
+              </OrdersProvider>
             </ServiceRequestsProvider>
           </ProductsProvider>
         </AuthProvider>

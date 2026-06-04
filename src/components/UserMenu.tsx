@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
@@ -9,8 +9,12 @@ export function UserMenu({ overHero = false }: { overHero?: boolean }) {
   const { t } = useI18n();
   const { user, isLoading, isAuthenticated, isAdmin, logout } = useAuth();
   const nav = useNavigate();
+  const pathname = useRouterState({ select: s => s.location.pathname });
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const isAccountActive =
+    pathname === "/account" || pathname === "/login" || pathname.startsWith("/admin");
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -32,16 +36,24 @@ export function UserMenu({ overHero = false }: { overHero?: boolean }) {
     );
   }
 
+  const pillClass = (active: boolean) =>
+    cn(
+      "inline-flex items-center gap-1.5 h-11 rounded-full border text-base font-semibold transition",
+      active
+        ? overHero
+          ? "border-white bg-white text-black shadow-md ring-2 ring-white/40"
+          : "border-primary bg-primary text-primary-foreground shadow-glow"
+        : overHero
+          ? "border-white/25 bg-white/10 text-white hover:bg-white/20"
+          : "border-border bg-card hover:bg-accent",
+    );
+
   if (!isAuthenticated || !user) {
     return (
       <Link
         to="/login"
-        className={cn(
-          "inline-flex items-center gap-1.5 h-10 px-3 rounded-full border text-sm font-semibold transition",
-          overHero
-            ? "border-white/25 bg-white/10 text-white hover:bg-white/20"
-            : "border-border bg-card hover:bg-accent",
-        )}
+        aria-current={pathname === "/login" ? "page" : undefined}
+        className={cn(pillClass(pathname === "/login"), "px-3.5")}
       >
         <LogIn className="size-4" />
         <span className="hidden sm:inline">{t("login")}</span>
@@ -61,19 +73,22 @@ export function UserMenu({ overHero = false }: { overHero?: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={cn(
-          "inline-flex items-center gap-2 h-10 ps-1 pe-3 rounded-full border transition",
-          overHero
-            ? "border-white/25 bg-white/10 text-white hover:bg-white/20"
-            : "border-border bg-card hover:bg-accent",
-        )}
+        aria-current={isAccountActive ? "page" : undefined}
+        className={cn(pillClass(isAccountActive), "gap-2 ps-1 pe-3.5")}
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <span className="size-8 rounded-full bg-primary text-primary-foreground text-xs font-bold inline-flex items-center justify-center">
+        <span
+          className={cn(
+            "size-8 rounded-full text-xs font-bold inline-flex items-center justify-center",
+            isAccountActive && !overHero
+              ? "bg-primary-foreground text-primary"
+              : "bg-primary text-primary-foreground",
+          )}
+        >
           {initials}
         </span>
-        <span className="hidden sm:inline text-sm font-semibold max-w-[120px] truncate">{user.name}</span>
+        <span className="hidden sm:inline text-base font-semibold max-w-[140px] truncate">{user.name}</span>
       </button>
 
       {open && (

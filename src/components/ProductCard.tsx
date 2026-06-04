@@ -5,7 +5,8 @@ import { useState } from "react";
 import type { Product } from "@/lib/products";
 import { getProductName } from "@/lib/products";
 import { formatPrice } from "@/lib/currency";
-import { getProductHighlights } from "@/lib/product-highlights";
+import { getProductSpecSummary } from "@/lib/product-highlights";
+import { ProductSpecSummaryBox } from "@/components/ProductSpecSummaryBox";
 import { useCart } from "@/lib/cart-context";
 import { useI18n } from "@/lib/i18n";
 
@@ -15,7 +16,7 @@ export function ProductCard({ p }: { p: Product }) {
   const [justAdded, setJustAdded] = useState(false);
   const inStock = p.stock > 0;
   const name = getProductName(p);
-  const highlights = getProductHighlights(p);
+  const specSummary = getProductSpecSummary(p, lang);
 
   const handleAddToCart = () => {
     if (!inStock) return;
@@ -54,15 +55,7 @@ export function ProductCard({ p }: { p: Product }) {
         <div className="p-5 pb-3">
           <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">{p.brand}</p>
           <h3 className="font-semibold text-lg mb-2 line-clamp-1 group-hover:text-primary transition-colors">{name}</h3>
-          {highlights.length > 0 && (
-            <div className="rounded-xl border border-border/70 bg-subtle/60 px-3 py-2.5 mb-3 space-y-1">
-              {highlights.map(line => (
-                <p key={line} className="text-xs text-muted-foreground leading-snug line-clamp-1">
-                  {line}
-                </p>
-              ))}
-            </div>
-          )}
+          <ProductSpecSummaryBox text={specSummary} className="mb-3" />
           <p className="text-sm text-muted-foreground mb-3">{lang === "ar" ? p.subcategoryAr : p.subcategory}</p>
           <span className="text-2xl font-bold text-gradient">{formatPrice(p.price, lang)}</span>
         </div>

@@ -18,7 +18,8 @@ import {
   removeUserAddress,
   updateUserAddress,
   updateUserProfile,
-  validatePhone,
+  updateUserPassword,
+  validatePassword,
   type PublicUser,
   type UserAddress,
 } from "./auth-store";
@@ -55,7 +56,13 @@ interface AuthCtx {
   }) => Promise<{ ok: true } | { ok: false; code: AuthErrorCode }>;
   addAddress: (label: string, address: string) => void;
   updateAddress: (addressId: string, label: string, address: string) => void;
-  updateProfile: (name: string, phone: string) => boolean;
+  updateProfile: (
+    updates: { name?: string; email?: string; phone?: string },
+  ) => { ok: true } | { ok: false; code: AuthErrorCode };
+  updatePassword: (
+    password: string,
+    confirmPassword: string,
+  ) => Promise<{ ok: true } | { ok: false; code: AuthErrorCode }>;
   removeAddress: (addressId: string) => void;
   logout: () => void;
   refresh: () => void;
@@ -168,13 +175,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (updated) setUser(updated);
   }, [user]);
 
-  const updateProfile = useCallback((name: string, phone: string) => {
-    if (!user) return false;
-    if (!name.trim() || !validatePhone(phone)) return false;
-    const updated = updateUserProfile(user.id, { name: name.trim(), phone: phone.trim() });
-    if (updated) setUser(updated);
-    return !!updated;
+  const updateProfile = useCallback((updates: { name?: string; email?: string; phone?: string }) => {
+    if (!user) return { ok: false as const, code: "not_found" as const };
+    const result = updateUserProfile(user.id, updates);
+    if (!result.ok) return { ok: false as const, code: result.code };
+    setUser(result.user);
+    return { ok: true as const };
   }, [user]);
+
+  const updatePassword = useCallback(
+    async (password: string, confirmPassword: string) => {
+      if (!user) return { ok: false as const, code: "not_found" as const };
+      if (!validatePassword(password)) return { ok: false as const, code: "weak_password" as const };
+      if (password !== confirmPassword) {
+        return { ok: false as const, code: "password_mismatch" as const };
+      }
+      const result = await updateUserPassword(user.id, password);
+      if (!result.ok) return { ok: false as const, code: result.code };
+      return { ok: true as const };
+    },
+    [user],
+  );
 
   const removeAddress = useCallback((addressId: string) => {
     if (!user) return;
@@ -207,11 +228,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       addAddress,
       updateAddress,
       updateProfile,
+      updatePassword,
       removeAddress,
       logout,
       refresh,
     }),
-    [user, isLoading, login, register, addAddress, updateAddress, updateProfile, removeAddress, logout, refresh],
+    [user, isLoading, login, register, addAddress, updateAddress, updateProfile, updatePassword, removeAddress, logout, refresh],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

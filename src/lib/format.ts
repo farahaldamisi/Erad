@@ -17,3 +17,19 @@ export function formatDateTime(value: string | Date | number, lang: Lang = "en")
     minute: "2-digit",
   }).format(new Date(value));
 }
+
+export function formatDateOnly(value: string | Date | number, lang: Lang = "en"): string {
+  return new Intl.DateTimeFormat(lang === "ar" ? "ar-JO" : "en-GB", {
+    ...LATN,
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+export function formatDayName(value: string | Date | number, lang: Lang = "en"): string {
+  return new Intl.DateTimeFormat(lang === "ar" ? "ar-JO" : "en-GB", {
+    ...LATN,
+    weekday: "long",
+  }).format(new Date(value));
+}

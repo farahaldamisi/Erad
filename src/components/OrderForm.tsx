@@ -6,23 +6,40 @@ import { logActivity } from "@/lib/activity";
 import { formatPrice } from "@/lib/currency";
 import { formatNumber } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
+import { useOrdersCtx } from "@/lib/orders-context";
+import { createOrder, type Order, type PaymentMethod } from "@/lib/orders";
+import { useProducts } from "@/lib/products-context";
+import { decrementProductStock } from "@/lib/stock-alerts";
 
 interface OrderFormProps {
   inStock: boolean;
-  onSuccess: () => void;
+  onSuccess: (order: Order) => void;
   productId?: string;
   productName?: string;
+  productPrice?: number;
+  productBrand?: string;
   cartSummary?: {
-    items: { productId: string; name: string; quantity: number; lineTotal: number }[];
+    items: { productId: string; name: string; brand?: string; quantity: number; lineTotal: number; unitPrice: number }[];
     total: number;
   };
 }
 
-export function OrderForm({ inStock, onSuccess, productId, productName, cartSummary }: OrderFormProps) {
+export function OrderForm({
+  inStock,
+  onSuccess,
+  productId,
+  productName,
+  productPrice,
+  productBrand,
+  cartSummary,
+}: OrderFormProps) {
   const { t, lang } = useI18n();
   const { user, isAuthenticated, addAddress, updateAddress, updateProfile } = useAuth();
+  const { addOrder } = useOrdersCtx();
+  const { setProducts } = useProducts();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [selectedAddressDraft, setSelectedAddressDraft] = useState({ label: "", address: "" });
   const [useNewAddress, setUseNewAddress] = useState(false);
@@ -44,12 +61,24 @@ export function OrderForm({ inStock, onSuccess, productId, productName, cartSumm
     }
   }, [user]);
 
+  const resolveAddress = () => {
+    if (isAuthenticated) {
+      if (useNewAddress) {
+        const parts = [newAddress.label.trim(), newAddress.address.trim()].filter(Boolean);
+        return parts.join(" — ");
+      }
+      const parts = [selectedAddressDraft.label.trim(), selectedAddressDraft.address.trim()].filter(Boolean);
+      return parts.join(" — ");
+    }
+    return guestAddress.trim();
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isAuthenticated && user) {
       if (name.trim() !== user.name || phone.trim() !== user.phone) {
-        updateProfile(name.trim(), phone.trim());
+        updateProfile({ name: name.trim(), phone: phone.trim() });
       }
 
       if (!useNewAddress && selectedAddressId) {
@@ -67,6 +96,51 @@ export function OrderForm({ inStock, onSuccess, productId, productName, cartSumm
       }
     }
 
+    const address = resolveAddress();
+    const items = cartSummary
+      ? cartSummary.items.map(item => ({
+          productId: item.productId,
+          name: item.name,
+          brand: item.brand,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          lineTotal: item.lineTotal,
+        }))
+      : productId && productName && productPrice != null
+        ? [
+            {
+              productId,
+              name: productName,
+              brand: productBrand,
+              quantity: 1,
+              unitPrice: productPrice,
+              lineTotal: productPrice,
+            },
+          ]
+        : [];
+
+    const total = cartSummary?.total ?? productPrice ?? 0;
+
+    const order = createOrder({
+      userId: user?.id,
+      customerName: name.trim(),
+      customerEmail: user?.email,
+      phone: phone.trim(),
+      address,
+      paymentMethod,
+      items,
+      total,
+    });
+
+    addOrder(order);
+
+    setProducts(prev =>
+      decrementProductStock(
+        prev,
+        items.map(item => ({ productId: item.productId, quantity: item.quantity, name: item.name })),
+      ),
+    );
+
     logActivity({
       type: "order_submit",
       userId: user?.id,
@@ -75,6 +149,7 @@ export function OrderForm({ inStock, onSuccess, productId, productName, cartSumm
       label: cartSummary ? t("cart_order") : (productName ?? name.trim()),
       meta: {
         phone: phone.trim(),
+        orderId: order.id,
         ...(productId ? { productId } : {}),
         ...(productName ? { productName } : {}),
         ...(cartSummary
@@ -86,7 +161,8 @@ export function OrderForm({ inStock, onSuccess, productId, productName, cartSumm
         ...(!isAuthenticated && guestAddress.trim() ? { address: guestAddress.trim() } : {}),
       },
     });
-    onSuccess();
+
+    onSuccess(order);
   };
 
   const inputClass =
@@ -186,11 +262,23 @@ export function OrderForm({ inStock, onSuccess, productId, productName, cartSumm
         </label>
         <div className="grid grid-cols-2 gap-2">
           <label className="flex items-center gap-2 p-3 border border-border rounded-lg cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-            <input type="radio" name="pay" defaultChecked className="accent-primary" />
+            <input
+              type="radio"
+              name="pay"
+              checked={paymentMethod === "cash"}
+              onChange={() => setPaymentMethod("cash")}
+              className="accent-primary"
+            />
             <span className="text-sm">{t("cash")}</span>
           </label>
           <label className="flex items-center gap-2 p-3 border border-border rounded-lg cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-            <input type="radio" name="pay" className="accent-primary" />
+            <input
+              type="radio"
+              name="pay"
+              checked={paymentMethod === "visa"}
+              onChange={() => setPaymentMethod("visa")}
+              className="accent-primary"
+            />
             <span className="text-sm">{t("visa")}</span>
           </label>
         </div>

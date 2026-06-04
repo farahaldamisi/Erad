@@ -9,6 +9,7 @@ export interface ProductSearchParams {
   sub?: string;
   brand?: string;
   inStock?: boolean;
+  outOfStock?: boolean;
   sort?: "newest" | "price_low" | "price_high";
   q?: string;
   minPrice?: number;
@@ -26,14 +27,16 @@ export function filterProducts(products: Product[], search: ProductSearchParams)
   if (search.category && search.category !== "all") {
     list = list.filter(p => p.category === search.category);
   }
-  if (search.sub) {
+  if (search.sub && search.category && search.category !== "all") {
     list = list.filter(p => p.subcategory === search.sub);
   }
   if (search.brand) {
     list = list.filter(p => p.brand === search.brand);
   }
-  if (search.inStock) {
+  if (search.inStock && !search.outOfStock) {
     list = list.filter(p => p.stock > 0);
+  } else if (search.outOfStock && !search.inStock) {
+    list = list.filter(p => p.stock <= 0);
   }
   if (typeof search.minPrice === "number" && !Number.isNaN(search.minPrice)) {
     list = list.filter(p => p.price >= search.minPrice!);
@@ -66,6 +69,22 @@ export function filterProducts(products: Product[], search: ProductSearchParams)
 
 export function countProductsInSection(products: Product[], sectionId: string): number {
   return products.filter(p => p.category === sectionId).length;
+}
+
+export interface SubcategoryOption {
+  en: string;
+  ar: string;
+  count: number;
+}
+
+export function getSubcategoriesForSection(products: Product[], sectionId: string): SubcategoryOption[] {
+  const map = new Map<string, SubcategoryOption>();
+  for (const product of products.filter(p => p.category === sectionId)) {
+    const existing = map.get(product.subcategory);
+    if (existing) existing.count += 1;
+    else map.set(product.subcategory, { en: product.subcategory, ar: product.subcategoryAr, count: 1 });
+  }
+  return Array.from(map.values()).sort((a, b) => a.en.localeCompare(b.en));
 }
 
 export function groupProductsBySection(

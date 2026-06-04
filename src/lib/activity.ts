@@ -10,7 +10,9 @@ export type ActivityType =
   | "service_request"
   | "order_submit"
   | "product_view"
-  | "address_add";
+  | "address_add"
+  | "user_delete"
+  | "low_stock";
 
 export interface ActivityEvent {
   id: string;

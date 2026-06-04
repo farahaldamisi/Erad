@@ -14,6 +14,8 @@ export interface StoredUser {
   addresses: UserAddress[];
   role: UserRole;
   passwordHash: string;
+  /** Stored for display in account panel (local demo). */
+  passwordPlain?: string;
   createdAt: string;
 }
 
@@ -110,8 +112,37 @@ export function createAddress(label: string, address: string): UserAddress {
 export async function ensureSeedUsers(): Promise<void> {
   if (typeof window === "undefined") return;
   const users = readUsers();
-  const hasAdmin = users.some(u => u.email.toLowerCase() === SEED_ADMIN.email);
-  if (hasAdmin) return;
+  const adminIdx = users.findIndex(u => u.email.toLowerCase() === SEED_ADMIN.email);
+
+  if (adminIdx !== -1) {
+    const admin = users[adminIdx];
+    const seedHash = await hashPassword(SEED_ADMIN.password);
+    const nextPasswordPlain =
+      admin.passwordPlain ??
+      (admin.passwordHash === seedHash ? SEED_ADMIN.password : undefined);
+    const nextAddresses =
+      Array.isArray(admin.addresses) && admin.addresses.length > 0
+        ? admin.addresses
+        : [createAddress("Office", "Amman, Jordan")];
+    const next = normalizeUser({
+      ...admin,
+      name: admin.name?.trim() || SEED_ADMIN.name,
+      phone: admin.phone?.trim() || "0793315007",
+      passwordPlain: nextPasswordPlain,
+      addresses: nextAddresses,
+    });
+    const prev = normalizeUser(admin);
+    if (
+      next.name !== prev.name ||
+      next.phone !== prev.phone ||
+      next.passwordPlain !== prev.passwordPlain ||
+      JSON.stringify(next.addresses) !== JSON.stringify(prev.addresses)
+    ) {
+      users[adminIdx] = next;
+      writeUsers(users);
+    }
+    return;
+  }
 
   const passwordHash = await hashPassword(SEED_ADMIN.password);
   writeUsers([
@@ -124,9 +155,40 @@ export async function ensureSeedUsers(): Promise<void> {
       addresses: [createAddress("Office", "Amman, Jordan")],
       role: SEED_ADMIN.role,
       passwordHash,
+      passwordPlain: SEED_ADMIN.password,
       createdAt: new Date().toISOString(),
     }),
   ]);
+}
+
+export function getAdminPasswordPlain(userId: string): string {
+  return getUserPasswordPlain(userId);
+}
+
+export function getUserPasswordPlain(userId: string): string {
+  const user = readUsers().find(u => u.id === userId);
+  if (!user) return "";
+  return user.passwordPlain ?? "";
+}
+
+export async function updateUserPassword(
+  userId: string,
+  newPassword: string,
+): Promise<{ ok: true } | { ok: false; code: "not_found" | "weak_password" }> {
+  if (!validatePassword(newPassword)) return { ok: false, code: "weak_password" };
+
+  const users = readUsers();
+  const idx = users.findIndex(u => u.id === userId);
+  if (idx === -1) return { ok: false, code: "not_found" };
+
+  const passwordHash = await hashPassword(newPassword);
+  users[idx] = normalizeUser({
+    ...users[idx],
+    passwordHash,
+    passwordPlain: newPassword,
+  });
+  writeUsers(users);
+  return { ok: true };
 }
 
 export function getSessionUser(): PublicUser | null {
@@ -185,6 +247,7 @@ export async function registerUser(input: {
     addresses: input.addresses,
     role: "customer",
     passwordHash,
+    passwordPlain: input.password,
     createdAt: new Date().toISOString(),
   });
   writeUsers([...readUsers(), user]);
@@ -194,14 +257,37 @@ export async function registerUser(input: {
 
 export function updateUserProfile(
   userId: string,
-  updates: Partial<Pick<StoredUser, "name" | "phone">>,
-): PublicUser | null {
+  updates: Partial<Pick<StoredUser, "name" | "phone" | "email">>,
+):
+  | { ok: true; user: PublicUser }
+  | { ok: false; code: "not_found" | "email_exists" | "invalid_email" | "phone_required" | "name_required" } {
   const users = readUsers();
   const idx = users.findIndex(u => u.id === userId);
-  if (idx === -1) return null;
-  users[idx] = normalizeUser({ ...users[idx], ...updates });
+  if (idx === -1) return { ok: false, code: "not_found" };
+
+  const current = users[idx];
+  const next = { ...current };
+
+  if (updates.name !== undefined) {
+    if (!updates.name.trim()) return { ok: false, code: "name_required" };
+    next.name = updates.name.trim();
+  }
+  if (updates.email !== undefined) {
+    const email = updates.email.trim().toLowerCase();
+    if (!validateEmail(email)) return { ok: false, code: "invalid_email" };
+    if (users.some(u => u.id !== userId && u.email.toLowerCase() === email)) {
+      return { ok: false, code: "email_exists" };
+    }
+    next.email = email;
+  }
+  if (updates.phone !== undefined) {
+    if (!validatePhone(updates.phone)) return { ok: false, code: "phone_required" };
+    next.phone = updates.phone.trim();
+  }
+
+  users[idx] = normalizeUser(next);
   writeUsers(users);
-  return toPublicUser(users[idx]);
+  return { ok: true, user: toPublicUser(users[idx]) };
 }
 
 export function addUserAddress(userId: string, label: string, address: string): PublicUser | null {
@@ -238,6 +324,20 @@ export function removeUserAddress(userId: string, addressId: string): PublicUser
   users[idx].addresses = users[idx].addresses.filter(a => a.id !== addressId);
   writeUsers(users);
   return toPublicUser(users[idx]);
+}
+
+export function deleteUser(userId: string): { ok: true } | { ok: false; code: "not_found" | "cannot_delete_admin" } {
+  const users = readUsers();
+  const target = users.find(u => u.id === userId);
+  if (!target) return { ok: false, code: "not_found" };
+  if (target.role === "admin") return { ok: false, code: "cannot_delete_admin" };
+
+  writeUsers(users.filter(u => u.id !== userId));
+
+  const session = readSession();
+  if (session?.userId === userId) clearSession();
+
+  return { ok: true };
 }
 
 export function validatePassword(password: string): boolean {
