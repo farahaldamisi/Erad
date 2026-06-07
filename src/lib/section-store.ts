@@ -1,4 +1,5 @@
 import {
+  migrateSectionCatalog,
   migrateSectionImages,
   migrateSeedSections,
   normalizeSection,
@@ -15,7 +16,9 @@ export function loadSections(): Section[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return seedSections;
     return sortSections(
-      migrateSeedSections(migrateSectionImages((JSON.parse(raw) as Section[]).map(normalizeSection))),
+      migrateSeedSections(
+        migrateSectionImages(migrateSectionCatalog((JSON.parse(raw) as Section[]).map(normalizeSection))),
+      ),
     );
   } catch {
     return seedSections;

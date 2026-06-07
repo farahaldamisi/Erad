@@ -4,11 +4,37 @@ import { cn } from "@/lib/utils";
 export function OverviewGalleryStack({
   images,
   fullWidth = false,
+  compact = false,
 }: {
   images: string[];
   fullWidth?: boolean;
+  compact?: boolean;
 }) {
   if (images.length === 0) return null;
+
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-3 w-full">
+        {images.map((src, i) => (
+          <motion.div
+            key={`${src.slice(0, 40)}-${i}`}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-20px" }}
+            transition={{ duration: 0.35, delay: i * 0.05 }}
+            className="w-full rounded-xl border border-border bg-subtle overflow-hidden shadow-card"
+          >
+            <img
+              src={src}
+              alt=""
+              loading={i === 0 ? "eager" : "lazy"}
+              className="w-full max-h-36 sm:max-h-44 object-contain p-3 mx-auto"
+            />
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div

@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Product } from "@/lib/products";
 import { getProductName } from "@/lib/products";
 import { formatPrice } from "@/lib/currency";
+import { formatNumber } from "@/lib/format";
 import { getProductSpecSummary } from "@/lib/product-highlights";
 import { ProductSpecSummaryBox } from "@/components/ProductSpecSummaryBox";
 import { useCart } from "@/lib/cart-context";
@@ -17,6 +18,7 @@ export function ProductCard({ p }: { p: Product }) {
   const inStock = p.stock > 0;
   const name = getProductName(p);
   const specSummary = getProductSpecSummary(p, lang);
+  const discount = p.discountPercent ?? 0;
 
   const handleAddToCart = () => {
     if (!inStock) return;
@@ -51,6 +53,20 @@ export function ProductCard({ p }: { p: Product }) {
           >
             {inStock ? t("in_stock") : t("out_stock")}
           </span>
+          {(discount > 0 || p.isNewArrival) && (
+            <div className="absolute top-3 start-3 flex flex-col items-start gap-1.5">
+              {discount > 0 && (
+                <span className="text-[11px] px-2.5 py-1 rounded-full font-bold bg-rose-500 text-white">
+                  −{formatNumber(discount)}%
+                </span>
+              )}
+              {p.isNewArrival && (
+                <span className="text-[10px] px-2 py-1 rounded-sm font-bold bg-primary text-primary-foreground uppercase tracking-wide">
+                  {t("badge_new")}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="p-5 pb-3">
           <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">{p.brand}</p>

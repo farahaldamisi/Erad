@@ -1,4 +1,5 @@
-export const ERAD_PHONE = "0793315007";
+export const ERAD_PHONES = ["0793315007", "079171596", "0791900787"] as const;
+export const ERAD_PHONE = ERAD_PHONES[0];
 export const ERAD_PHONE_WHATSAPP = "962793315007";
 export const ERAD_EMAIL = "info@erad.com";
 export const ERAD_FACEBOOK_URL = "https://www.facebook.com/EradMall.jo";

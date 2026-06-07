@@ -3,7 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { useProducts } from "@/lib/products-context";
 import { getSectionLabel, sortSections } from "@/lib/sections";
 import logo from "@/assets/logo.png";
-import { ERAD_PHONE, ERAD_EMAIL } from "@/lib/contact";
+import { ERAD_PHONES, ERAD_EMAIL } from "@/lib/contact";
 import { CompanyMap } from "@/components/CompanyMap";
 
 export function Footer() {
@@ -40,8 +40,18 @@ export function Footer() {
         <div>
           <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider">{t("nav_contact")}</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>{ERAD_PHONE}</li>
-            <li>{ERAD_EMAIL}</li>
+            {ERAD_PHONES.map(phone => (
+              <li key={phone}>
+                <a href={`tel:${phone}`} className="hover:text-primary transition">
+                  {phone}
+                </a>
+              </li>
+            ))}
+            <li>
+              <a href={`mailto:${ERAD_EMAIL}`} className="hover:text-primary transition">
+                {ERAD_EMAIL}
+              </a>
+            </li>
           </ul>
         </div>
       </div>

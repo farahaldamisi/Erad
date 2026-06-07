@@ -14,6 +14,8 @@ export interface ProductSearchParams {
   q?: string;
   minPrice?: number;
   maxPrice?: number;
+  newArrivals?: boolean;
+  specialOffers?: boolean;
 }
 
 function normalizeQuery(q?: string) {
@@ -61,6 +63,13 @@ export function filterProducts(products: Product[], search: ProductSearchParams)
     });
   }
 
+  if (search.newArrivals) {
+    list = list.filter(p => p.isNewArrival);
+  }
+  if (search.specialOffers) {
+    list = list.filter(p => (p.discountPercent ?? 0) > 0);
+  }
+
   if (search.sort === "price_low") list.sort((a, b) => a.price - b.price);
   if (search.sort === "price_high") list.sort((a, b) => b.price - a.price);
 
@@ -75,14 +84,23 @@ export interface SubcategoryOption {
   en: string;
   ar: string;
   count: number;
+  image?: string;
 }
 
 export function getSubcategoriesForSection(products: Product[], sectionId: string): SubcategoryOption[] {
   const map = new Map<string, SubcategoryOption>();
   for (const product of products.filter(p => p.category === sectionId)) {
     const existing = map.get(product.subcategory);
-    if (existing) existing.count += 1;
-    else map.set(product.subcategory, { en: product.subcategory, ar: product.subcategoryAr, count: 1 });
+    if (existing) {
+      existing.count += 1;
+    } else {
+      map.set(product.subcategory, {
+        en: product.subcategory,
+        ar: product.subcategoryAr,
+        count: 1,
+        image: product.image,
+      });
+    }
   }
   return Array.from(map.values()).sort((a, b) => a.en.localeCompare(b.en));
 }

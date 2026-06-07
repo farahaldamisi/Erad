@@ -98,7 +98,7 @@ function RootComponent() {
                   <ActivityTracker />
                   <div className="min-h-screen flex flex-col">
                     <Navbar />
-                    <main className="flex-1 pt-16"><Outlet /></main>
+                    <main className="flex-1 pt-[4.25rem]"><Outlet /></main>
                     <FloatingSocialButtons />
                     <Footer />
                   </div>

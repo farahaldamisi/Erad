@@ -3,7 +3,7 @@ import {
   ERAD_ADDRESS,
   ERAD_ADDRESS_AR,
   ERAD_EMAIL,
-  ERAD_PHONE,
+  ERAD_PHONES,
   googleMapsDirectionsUrl,
   googleMapsEmbedUrl,
 } from "@/lib/contact";
@@ -24,8 +24,18 @@ export function CompanyMap() {
             </h3>
             <p className="text-muted-foreground text-sm">{address}</p>
             <ul className="mt-2 text-sm text-muted-foreground space-y-1">
-              <li>{ERAD_PHONE}</li>
-              <li>{ERAD_EMAIL}</li>
+              {ERAD_PHONES.map(phone => (
+                <li key={phone}>
+                  <a href={`tel:${phone}`} className="hover:text-primary transition">
+                    {phone}
+                  </a>
+                </li>
+              ))}
+              <li>
+                <a href={`mailto:${ERAD_EMAIL}`} className="hover:text-primary transition">
+                  {ERAD_EMAIL}
+                </a>
+              </li>
             </ul>
           </div>
           <a

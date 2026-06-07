@@ -16,12 +16,19 @@ export interface Section {
 
 export const seedSections: Section[] = [
   { id: "laptops", name: "Laptops", nameAr: "لابتوبات", image: imgLaptops, order: 0 },
-  { id: "printers", name: "Printers", nameAr: "طابعات", image: imgPrinters, order: 1 },
-  { id: "desktops", name: "Desktops", nameAr: "أجهزة حاسوب", image: imgDesktops, order: 2 },
-  { id: "cases", name: "PC Cases", nameAr: "كيسات", image: imgCases, order: 3 },
-  { id: "accessories", name: "Accessories", nameAr: "إكسسوارات", image: imgAccessories, order: 4 },
-  { id: "cables-adapters", name: "Cables & Adapters", nameAr: "كابلات ومحولات", image: imgCables, order: 5 },
+  { id: "monitors", name: "Monitors", nameAr: "شاشات", image: imgLaptops, order: 1 },
+  { id: "components", name: "Components", nameAr: "قطع حاسوب", image: imgCases, order: 2 },
+  { id: "desktops", name: "Desktop Computers", nameAr: "أجهزة مكتبية", image: imgDesktops, order: 3 },
+  { id: "gaming", name: "Gaming", nameAr: "جيمنغ", image: imgCases, order: 4 },
+  { id: "accessories", name: "Accessories", nameAr: "إكسسوارات", image: imgAccessories, order: 5 },
+  { id: "printers", name: "Printers", nameAr: "طابعات", image: imgPrinters, order: 6 },
+  { id: "network", name: "Network", nameAr: "شبكات", image: imgCables, order: 7 },
 ];
+
+const LEGACY_SECTION_IDS: Record<string, string> = {
+  cases: "components",
+  "cables-adapters": "network",
+};
 
 export function slugifySectionId(name: string): string {
   const slug = name
@@ -33,16 +40,41 @@ export function slugifySectionId(name: string): string {
 }
 
 const LEGACY_SECTION_IMAGE_MARKERS = ["categories/cat-", ".svg"] as const;
-const STALE_CABLES_IMAGE_MARKERS = ["p-acc2.jpg", "p-acc1.jpg"] as const;
+const STALE_NETWORK_IMAGE_MARKERS = ["p-acc2.jpg", "p-acc1.jpg"] as const;
 
 const defaultSectionImages = Object.fromEntries(seedSections.map(s => [s.id, s.image])) as Record<
   string,
   string
 >;
 
+export function migrateSectionCatalog(sections: Section[]): Section[] {
+  const migrated = sections.map(section => {
+    const nextId = LEGACY_SECTION_IDS[section.id];
+    if (!nextId) return section;
+    const seed = seedSections.find(s => s.id === nextId);
+    return {
+      ...section,
+      id: nextId,
+      name: seed?.name ?? section.name,
+      nameAr: seed?.nameAr ?? section.nameAr,
+      image: seed?.image ?? section.image,
+    };
+  });
+
+  const byId = new Map<string, Section>();
+  for (const section of migrated) {
+    const existing = byId.get(section.id);
+    if (!existing || section.order < existing.order) {
+      byId.set(section.id, section);
+    }
+  }
+  return Array.from(byId.values());
+}
+
 export function migrateSeedSections(sections: Section[]): Section[] {
-  const existing = new Set(sections.map(s => s.id));
-  const merged = [...sections];
+  const migrated = migrateSectionCatalog(sections);
+  const existing = new Set(migrated.map(s => s.id));
+  const merged = [...migrated];
   for (const seed of seedSections) {
     if (!existing.has(seed.id)) merged.push(seed);
   }
@@ -57,7 +89,7 @@ export function migrateSectionImages(sections: Section[]): Section[] {
     const usesLegacyImage =
       !section.image ||
       LEGACY_SECTION_IMAGE_MARKERS.some(marker => section.image.includes(marker)) ||
-      (section.id === "cables-adapters" && STALE_CABLES_IMAGE_MARKERS.some(marker => section.image.includes(marker)));
+      (section.id === "network" && STALE_NETWORK_IMAGE_MARKERS.some(marker => section.image.includes(marker)));
 
     return usesLegacyImage ? { ...section, image: defaultImage } : section;
   });

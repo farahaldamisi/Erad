@@ -4,6 +4,9 @@ import { Edit3, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { normalizeProduct, type Product } from "@/lib/products";
 import { filterProducts, groupProductsBySection, type ProductSearchParams } from "@/lib/product-filters";
+import { GAMING_PC_SEARCH } from "@/lib/home-spotlights";
+import { isGamingDesktop } from "@/lib/products";
+import { getSubcategoryCatalogForSection, getSubcategoryCatalogLabel } from "@/lib/subcategories";
 import { maybeLogLowStockAlert } from "@/lib/stock-alerts";
 import { formatPrice } from "@/lib/currency";
 import { formatNumber } from "@/lib/format";
@@ -69,7 +72,10 @@ function AdminProductsPage() {
       if (!next.q?.trim()) delete next.q;
       else next.q = next.q.trim();
       if (!next.brand) delete next.brand;
+      if (!next.sub) delete next.sub;
       if (!next.inStock) delete next.inStock;
+      if (!next.newArrivals) delete next.newArrivals;
+      if (!next.specialOffers) delete next.specialOffers;
       if (next.minPrice == null || Number.isNaN(next.minPrice)) delete next.minPrice;
       if (next.maxPrice == null || Number.isNaN(next.maxPrice)) delete next.maxPrice;
       return next;
@@ -123,7 +129,7 @@ function AdminProductsPage() {
             <button
               key={section.id}
               type="button"
-              onClick={() => updateFilters({ category: section.id })}
+              onClick={() => updateFilters({ category: section.id, sub: undefined })}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
                 filters.category === section.id
                   ? "bg-primary text-primary-foreground border-primary"
@@ -133,7 +139,46 @@ function AdminProductsPage() {
               {getSectionLabel(section, lang)}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => updateFilters({ category: GAMING_PC_SEARCH.category, sub: GAMING_PC_SEARCH.sub })}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+              filters.category === GAMING_PC_SEARCH.category && filters.sub === GAMING_PC_SEARCH.sub
+                ? "bg-violet-600 text-white border-violet-600"
+                : "bg-background border-border hover:border-violet-500/40"
+            }`}
+          >
+            {t("admin_filter_gaming_pc")}
+          </button>
         </div>
+
+        {filters.category && filters.category !== "all" && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => updateFilters({ sub: undefined })}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                !filters.sub ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
+              }`}
+            >
+              {t("all")} — {t("subcategory")}
+            </button>
+            {getSubcategoryCatalogForSection(filters.category).map(option => (
+              <button
+                key={option.slug}
+                type="button"
+                onClick={() => updateFilters({ sub: option.slug })}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                  filters.sub === option.slug
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border hover:border-primary/40"
+                }`}
+              >
+                {lang === "ar" ? option.labelAr : option.labelEn}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1 border-t border-border">
           <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
@@ -169,6 +214,24 @@ function AdminProductsPage() {
               className="size-4 accent-primary"
             />
             <span className="text-sm">{t("in_stock")}</span>
+          </label>
+          <label className="flex items-center gap-2 h-10 px-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.newArrivals ?? false}
+              onChange={e => updateFilters({ newArrivals: e.target.checked })}
+              className="size-4 accent-primary"
+            />
+            <span className="text-sm">{t("home_new_arrivals")}</span>
+          </label>
+          <label className="flex items-center gap-2 h-10 px-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.specialOffers ?? false}
+              onChange={e => updateFilters({ specialOffers: e.target.checked })}
+              className="size-4 accent-primary"
+            />
+            <span className="text-sm">{t("home_special_offers")}</span>
           </label>
         </div>
 
@@ -222,8 +285,11 @@ function hasActiveFilters(filters: ProductSearchParams) {
   return Boolean(
     filters.q?.trim() ||
       (filters.category && filters.category !== "all") ||
+      filters.sub ||
       filters.brand ||
       filters.inStock ||
+      filters.newArrivals ||
+      filters.specialOffers ||
       filters.minPrice != null ||
       filters.maxPrice != null,
   );
@@ -279,6 +345,8 @@ function SectionProductsBlock({
               <tr>
                 <th className="text-start px-4 py-3 font-semibold text-xs uppercase tracking-wider">{t("product_name")}</th>
                 <th className="text-start px-4 py-3 font-semibold text-xs uppercase tracking-wider">{t("brand_label")}</th>
+                <th className="text-start px-4 py-3 font-semibold text-xs uppercase tracking-wider">{t("subcategory")}</th>
+                <th className="text-start px-4 py-3 font-semibold text-xs uppercase tracking-wider">{t("admin_col_badges")}</th>
                 <th className="text-start px-4 py-3 font-semibold text-xs uppercase tracking-wider">{t("price")}</th>
                 <th className="text-start px-4 py-3 font-semibold text-xs uppercase tracking-wider">{t("stock")}</th>
                 <th></th>
@@ -294,6 +362,28 @@ function SectionProductsBlock({
                     </div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{p.brand}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    {getSubcategoryCatalogLabel(section.id, p.subcategory, lang)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {isGamingDesktop(p.category, p.subcategory) && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/15 text-violet-700">
+                          {t("home_gaming_pc_title")}
+                        </span>
+                      )}
+                      {p.isNewArrival && (
+                        <span className="px-2 py-0.5 rounded-sm text-[10px] font-bold bg-primary text-primary-foreground uppercase">
+                          {t("badge_new")}
+                        </span>
+                      )}
+                      {(p.discountPercent ?? 0) > 0 && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600">
+                          −{formatNumber(p.discountPercent ?? 0)}%
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatPrice(p.price, lang)}</td>
                   <td className="px-4 py-3">
                     <span

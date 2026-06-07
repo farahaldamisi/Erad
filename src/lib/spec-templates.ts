@@ -76,6 +76,55 @@ export function createLaptopSpecTemplate(): SpecGroup[] {
   ];
 }
 
+/** Empty gaming desktop spec fields — shown on home Gaming PC cards. */
+export function createGamingDesktopSpecTemplate(): SpecGroup[] {
+  const field = (label: string) => ({ label, value: "" });
+
+  return [
+    {
+      group: "Processor Specifications",
+      items: [
+        field("Processor Brand"),
+        field("Processor Type"),
+        field("Processor Generation"),
+        field("Processor Model"),
+        field("Processor Speed"),
+        field("Number Of Cores"),
+        field("Processor Cache"),
+      ],
+    },
+    {
+      group: "Memory",
+      items: [field("Memory Size"), field("Memory Type")],
+    },
+    {
+      group: "Graphic Card Specifications",
+      items: [
+        field("Graphic Manufacturer"),
+        field("Graphic Memory Size"),
+        field("Graphic Card Model"),
+        field("Graphic Type"),
+      ],
+    },
+    {
+      group: "Storage",
+      items: [field("Storage Technology"), field("Storage Size")],
+    },
+    {
+      group: "Features",
+      items: [field("Cooling")],
+    },
+    {
+      group: "Operating System",
+      items: [field("Operating System")],
+    },
+    {
+      group: "Warranty",
+      items: [field("Warranty")],
+    },
+  ];
+}
+
 const LEGACY_LAPTOP_SPEC_MAP: Array<{
   from: { group: string; label: string };
   to: { group: string; label: string };
@@ -109,9 +158,11 @@ function specKey(group: string, label: string) {
   return `${group}::${label}`;
 }
 
-/** Merge saved specs into template so new fields appear when template is updated. */
-export function mergeWithLaptopTemplate(existing: SpecGroup[]): SpecGroup[] {
-  const template = createLaptopSpecTemplate();
+function mergeWithTemplate(
+  template: SpecGroup[],
+  existing: SpecGroup[],
+  legacyMap: typeof LEGACY_LAPTOP_SPEC_MAP = LEGACY_LAPTOP_SPEC_MAP,
+): SpecGroup[] {
   const valueByKey = new Map<string, string>();
 
   for (const g of existing) {
@@ -121,7 +172,7 @@ export function mergeWithLaptopTemplate(existing: SpecGroup[]): SpecGroup[] {
     }
   }
 
-  for (const { from, to } of LEGACY_LAPTOP_SPEC_MAP) {
+  for (const { from, to } of legacyMap) {
     const legacy = valueByKey.get(specKey(from.group, from.label));
     const target = specKey(to.group, to.label);
     if (legacy && !valueByKey.has(target)) {
@@ -136,6 +187,15 @@ export function mergeWithLaptopTemplate(existing: SpecGroup[]): SpecGroup[] {
       value: valueByKey.get(specKey(g.group, item.label)) ?? item.value,
     })),
   }));
+}
+
+/** Merge saved specs into template so new fields appear when template is updated. */
+export function mergeWithLaptopTemplate(existing: SpecGroup[]): SpecGroup[] {
+  return mergeWithTemplate(createLaptopSpecTemplate(), existing);
+}
+
+export function mergeWithGamingDesktopTemplate(existing: SpecGroup[]): SpecGroup[] {
+  return mergeWithTemplate(createGamingDesktopSpecTemplate(), existing, LEGACY_LAPTOP_SPEC_MAP);
 }
 
 /** Sample laptop specs for seed products and demos. */

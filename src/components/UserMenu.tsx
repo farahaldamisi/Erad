@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Lock, LogOut, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -53,9 +53,9 @@ export function UserMenu({ overHero = false }: { overHero?: boolean }) {
       <Link
         to="/login"
         aria-current={pathname === "/login" ? "page" : undefined}
-        className={cn(pillClass(pathname === "/login"), "px-3.5")}
+        className={cn(pillClass(pathname === "/login"), "px-3.5 shrink-0")}
       >
-        <LogIn className="size-4" />
+        <Lock className="size-4" />
         <span className="hidden sm:inline">{t("login")}</span>
       </Link>
     );

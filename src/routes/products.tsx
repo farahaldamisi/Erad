@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useProducts } from "@/lib/products-context";
 import { ProductCard } from "@/components/ProductCard";
+import { CategorySubcategoryGrid } from "@/components/products/CategorySubcategoryGrid";
 import { filterProducts, type ProductSearchParams } from "@/lib/product-filters";
 import { getSectionLabel, sortSections } from "@/lib/sections";
+import { sectionHasSubcategoryNav } from "@/lib/subcategories";
 import { useI18n } from "@/lib/i18n";
 import { formatNumber } from "@/lib/format";
 
@@ -20,6 +22,8 @@ function parseSearch(raw: Record<string, unknown>): Search {
     brand: typeof raw.brand === "string" ? raw.brand : undefined,
     inStock: raw.inStock === true || raw.inStock === "true",
     outOfStock: raw.outOfStock === true || raw.outOfStock === "true",
+    newArrivals: raw.newArrivals === true || raw.newArrivals === "true",
+    specialOffers: raw.specialOffers === true || raw.specialOffers === "true",
     sort: (raw.sort as Search["sort"]) ?? "newest",
     q: typeof raw.q === "string" ? raw.q : undefined,
     minPrice: min != null && !Number.isNaN(min) ? min : undefined,
@@ -42,6 +46,12 @@ function ProductsPage() {
   const categorySelected = Boolean(search.category && search.category !== "all");
 
   const sortedSections = useMemo(() => sortSections(sections), [sections]);
+  const activeSection = sortedSections.find(section => section.id === search.category);
+  const showSubcategoryGrid =
+    categorySelected &&
+    !search.newArrivals &&
+    !search.specialOffers &&
+    Boolean(activeSection && sectionHasSubcategoryNav(activeSection.id));
   const brands = useMemo(() => Array.from(new Set(products.map(p => p.brand))).sort(), [products]);
   const subs = useMemo(() => {
     if (!categorySelected) return [];
@@ -72,6 +82,8 @@ function ProductsPage() {
     if (!next.sub) delete next.sub;
     if (!next.inStock) delete next.inStock;
     if (!next.outOfStock) delete next.outOfStock;
+    if (!next.newArrivals) delete next.newArrivals;
+    if (!next.specialOffers) delete next.specialOffers;
     if (next.minPrice == null || Number.isNaN(next.minPrice)) delete next.minPrice;
     if (next.maxPrice == null || Number.isNaN(next.maxPrice)) delete next.maxPrice;
     nav({ search: next });
@@ -84,8 +96,24 @@ function ProductsPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="text-5xl font-bold mb-2">{t("nav_products")}</h1>
-        <p className="text-muted-foreground">{t("featured_sub")}</p>
+        {!showSubcategoryGrid && (
+          <>
+            <h1 className="text-5xl font-bold mb-2">
+              {search.newArrivals
+                ? t("home_new_arrivals")
+                : search.specialOffers
+                  ? t("home_special_offers")
+                  : t("nav_products")}
+            </h1>
+            <p className="text-muted-foreground">
+              {search.newArrivals
+                ? t("home_new_arrivals_sub")
+                : search.specialOffers
+                  ? t("home_special_offers_sub")
+                  : t("featured_sub")}
+            </p>
+          </>
+        )}
       </motion.div>
 
       <div className="relative mb-6 max-w-2xl">
@@ -129,14 +157,23 @@ function ProductsPage() {
         })}
       </div>
 
+      {showSubcategoryGrid && activeSection && (
+        <CategorySubcategoryGrid
+          section={activeSection}
+          products={products}
+          activeSub={search.sub}
+          onSelect={sub => updateSearch({ sub })}
+        />
+      )}
+
       <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-        <aside className="bg-card border border-border rounded-2xl p-5 h-fit sticky top-24 space-y-5 shadow-card">
+        <aside className="bg-card border border-border rounded-2xl p-5 h-fit sticky top-[5.5rem] space-y-5 shadow-card">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="size-4 text-primary" />
             <h3 className="font-bold text-lg">{t("filter")}</h3>
           </div>
 
-          {categorySelected && subs.length > 0 && (
+          {categorySelected && subs.length > 0 && !showSubcategoryGrid && sectionHasSubcategoryNav(search.category ?? "") && (
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
                 {t("subcategory")}
@@ -265,6 +302,11 @@ function ProductsPage() {
         </aside>
 
         <div>
+          {showSubcategoryGrid && (
+            <h3 className="text-xl font-bold mb-2">
+              {search.sub ? t("category_products_filtered") : t("category_products_heading")}
+            </h3>
+          )}
           <p className="text-sm text-muted-foreground mb-4">
             {formatNumber(filtered.length)} {t("products_found")}
           </p>

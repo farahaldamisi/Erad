@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Lock, UserPlus } from "lucide-react";
 import { AddressFieldsEditor } from "@/components/AddressFields";
@@ -34,6 +34,10 @@ function LoginPage() {
   const nav = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "register">(initialMode ?? "signin");
+
+  useEffect(() => {
+    setMode(initialMode ?? "signin");
+  }, [initialMode]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [addresses, setAddresses] = useState([{ label: "", address: "" }]);

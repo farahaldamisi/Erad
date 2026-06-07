@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none" aria-hidden="true">
+  <text
+    x="0"
+    y="20"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="18"
+    font-weight="700"
+    fill="#E31937"
+    letter-spacing="0.02em"
+  >DAHUA</text>
+  <text
+    x="0"
+    y="30"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="7"
+    font-weight="600"
+    fill="#666666"
+    letter-spacing="0.1em"
+  >TECHNOLOGY</text>
+</svg>

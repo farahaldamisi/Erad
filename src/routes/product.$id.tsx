@@ -42,7 +42,6 @@ function ProductPage() {
   const { addItem } = useCart();
   const nav = useNavigate();
   const [active, setActive] = useState(0);
-  const [detailTab, setDetailTab] = useState<"overview" | "specs">("overview");
   const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null);
   const [justAdded, setJustAdded] = useState(false);
   const inStock = p.stock > 0;
@@ -54,6 +53,8 @@ function ProductPage() {
   const filledSpecGroups = displaySpecs
     .map(g => ({ ...g, items: g.items.filter(it => it.value.trim()) }))
     .filter(g => g.items.length > 0);
+  const defaultDetailTab: "overview" | "specs" = filledSpecGroups.length > 0 ? "specs" : "overview";
+  const [detailTab, setDetailTab] = useState<"overview" | "specs">(defaultDetailTab);
   const otherOptions = useMemo(
     () =>
       products
@@ -78,10 +79,14 @@ function ProductPage() {
   };
 
   useEffect(() => {
+    setDetailTab(defaultDetailTab);
+  }, [p.id, defaultDetailTab]);
+
+  useEffect(() => {
     if (window.location.hash === "#details" && filledSpecGroups.length > 0) {
       setDetailTab("specs");
     }
-  }, [filledSpecGroups.length]);
+  }, [p.id, filledSpecGroups.length]);
 
   useEffect(() => {
     logActivity({
@@ -102,18 +107,18 @@ function ProductPage() {
         <ArrowLeft className="size-4 rtl:rotate-180" /> {t("nav_products")}
       </Link>
 
-      <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 items-start">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <div className="space-y-3">
+      <div className="grid lg:grid-cols-[minmax(0,34rem)_1fr] gap-8 lg:gap-10 items-start">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="max-w-xl mx-auto lg:mx-0 w-full">
+          <div className="space-y-2.5">
             <div
-              className="relative aspect-square bg-subtle rounded-3xl overflow-hidden border border-border shadow-card cursor-zoom-in"
+              className="relative aspect-square max-h-[380px] sm:max-h-[460px] bg-subtle rounded-2xl overflow-hidden border border-border shadow-card cursor-zoom-in"
               onMouseMove={onMove}
               onMouseLeave={() => setZoomPos(null)}
             >
               <img
                 src={p.gallery[active]}
                 alt={p.name}
-                className="w-full h-full object-contain p-10 transition-transform duration-200"
+                className="w-full h-full object-contain p-2 sm:p-3 transition-transform duration-200"
                 style={
                   zoomPos
                     ? { transform: `scale(2)`, transformOrigin: `${zoomPos.x}% ${zoomPos.y}%` }
@@ -121,20 +126,23 @@ function ProductPage() {
                 }
               />
             </div>
-            <div className="flex gap-3">
-              {p.gallery.map((g: string, i: number) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setActive(i)}
-                  className={`flex-1 aspect-square rounded-xl overflow-hidden bg-subtle border-2 transition ${
-                    active === i ? "border-primary shadow-glow" : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  <img src={g} alt="" className="w-full h-full object-contain p-2" />
-                </button>
-              ))}
-            </div>
+            {p.gallery.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                {p.gallery.map((g: string, i: number) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-label={`Image ${i + 1}`}
+                    className={`size-12 sm:size-14 shrink-0 rounded-lg overflow-hidden bg-subtle border transition ${
+                      active === i ? "border-primary ring-2 ring-primary/25" : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <img src={g} alt="" className="w-full h-full object-contain p-1" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -142,11 +150,25 @@ function ProductPage() {
           <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-2">
             {p.brand} · {lang === "ar" ? p.subcategoryAr : p.subcategory}
           </p>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4 leading-tight">{getProductName(p)}</h1>
-          <ProductSpecSummaryBox text={specSummary} className="mb-5" />
+          <h1 className="text-lg sm:text-xl font-bold mb-3 leading-snug">{getProductName(p)}</h1>
+          {(p.isNewArrival || (p.discountPercent ?? 0) > 0) && (
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              {p.isNewArrival && (
+                <span className="text-[10px] px-2.5 py-1 rounded-sm font-bold bg-primary text-primary-foreground uppercase tracking-wide">
+                  {t("badge_new")}
+                </span>
+              )}
+              {(p.discountPercent ?? 0) > 0 && (
+                <span className="text-[11px] px-2.5 py-1 rounded-full font-bold bg-rose-500 text-white">
+                  −{formatNumber(p.discountPercent ?? 0)}%
+                </span>
+              )}
+            </div>
+          )}
+          <ProductSpecSummaryBox text={specSummary} className="mb-4" />
 
           <div className="flex items-center gap-4 mb-6">
-            <span className="text-4xl font-bold text-gradient">{formatPrice(p.price, lang)}</span>
+            <span className="text-2xl sm:text-3xl font-bold text-gradient">{formatPrice(p.price, lang)}</span>
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${inStock ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
               {inStock ? <Check className="size-3.5" /> : <X className="size-3.5" />}
               {inStock ? t("in_stock") : t("out_stock")}
@@ -183,14 +205,14 @@ function ProductPage() {
         </motion.div>
       </div>
 
-      <section id="details" className="mt-14 lg:mt-20 scroll-mt-24">
-        <div className="flex w-full max-w-2xl p-2 rounded-full bg-subtle border border-border shadow-sm mb-8">
+      <section id="details" className="mt-10 lg:mt-14 scroll-mt-24">
+        <div className="inline-flex w-full max-w-xs sm:max-w-sm p-1 rounded-full bg-subtle border border-border shadow-sm mb-5">
           <button
             type="button"
             onClick={() => setDetailTab("overview")}
-            className={`flex-1 px-6 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-bold transition ${
+            className={`flex-1 px-3 py-2 rounded-full text-xs sm:text-sm font-semibold transition ${
               detailTab === "overview"
-                ? "bg-background text-primary shadow-md border border-border"
+                ? "bg-background text-primary shadow-sm border border-border"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -200,13 +222,13 @@ function ProductPage() {
             <button
               type="button"
               onClick={() => setDetailTab("specs")}
-              className={`flex-1 px-6 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-bold transition ${
+              className={`flex-1 px-3 py-2 rounded-full text-xs sm:text-sm font-semibold transition ${
                 detailTab === "specs"
-                  ? "bg-background text-primary shadow-md border border-border"
+                  ? "bg-background text-primary shadow-sm border border-border"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t("details")}
+              {t("specifications")}
             </button>
           )}
         </div>
@@ -256,17 +278,17 @@ function ProductPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="w-full space-y-6"
+              className="w-full space-y-4"
             >
               {(p.overview || p.overviewAr) && (
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-4xl">
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed w-full">
                   {lang === "ar" ? p.overviewAr : p.overview}
                 </p>
               )}
 
               {overviewImages.length > 0 ? (
                 <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2">
-                  <OverviewGalleryStack images={overviewImages} fullWidth />
+                  <OverviewGalleryStack images={overviewImages} compact />
                 </div>
               ) : (
                 !p.overview && !p.overviewAr && (
