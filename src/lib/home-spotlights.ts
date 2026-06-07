@@ -4,8 +4,6 @@ import { resolveSectionLabel, type Section } from "./sections";
 
 export const DAHUA_MONITORS_SEARCH = {
   category: "monitors",
-  brand: "Dahua",
-  q: "dahua",
   sort: "newest" as const,
 };
 

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Search, Globe, ShoppingCart, Menu, X, LayoutDashboard, ShoppingBag } from "lucide-react";
+import { Search, Globe, ShoppingCart, Menu, X, LayoutDashboard, ShoppingBag, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { UserMenu } from "@/components/UserMenu";
@@ -9,10 +9,12 @@ import { useCart } from "@/lib/cart-context";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme";
 import { useOrdersCtx } from "@/lib/orders-context";
 
 export function Navbar() {
   const { t, lang, setLang } = useI18n();
+  const { theme, toggleTheme } = useTheme();
   const { itemCount } = useCart();
   const { isAdmin } = useAuth();
   const { orders } = useOrdersCtx();
@@ -139,6 +141,16 @@ export function Navbar() {
         <div className="flex items-center gap-2 ms-auto md:ms-0 shrink-0">
           <button
             type="button"
+            onClick={toggleTheme}
+            className={circleIconClass(false)}
+            aria-label={theme === "dark" ? t("theme_switch_to_light") : t("theme_switch_to_dark")}
+            title={theme === "dark" ? t("theme_light") : t("theme_dark")}
+          >
+            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </button>
+
+          <button
+            type="button"
             onClick={() => setLang(lang === "en" ? "ar" : "en")}
             className={circleIconClass(false)}
             aria-label={lang === "en" ? "Switch to Arabic" : "Switch to English"}
@@ -258,6 +270,15 @@ export function Navbar() {
                   {t("nav_home")}
                 </Link>
               )}
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-base font-medium transition hover:bg-accent md:hidden"
+              >
+                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                {theme === "dark" ? t("theme_light") : t("theme_dark")}
+              </button>
             </div>
           </motion.div>
         )}

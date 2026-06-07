@@ -40,3 +40,8 @@ export function homeBrandSearch(item: HomeBrandItem) {
     ...(q ? { q } : {}),
   };
 }
+
+/** Curated brands shown in filters and on the home strip */
+export function getCatalogBrandNames(): string[] {
+  return homeBrands.map(item => item.search.brand ?? item.name);
+}

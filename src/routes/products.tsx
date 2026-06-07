@@ -8,6 +8,7 @@ import { CategorySubcategoryGrid } from "@/components/products/CategorySubcatego
 import { filterProducts, type ProductSearchParams } from "@/lib/product-filters";
 import { getSectionLabel, sortSections } from "@/lib/sections";
 import { sectionHasSubcategoryNav } from "@/lib/subcategories";
+import { getCatalogBrandNames } from "@/lib/home-brands";
 import { useI18n } from "@/lib/i18n";
 import { formatNumber } from "@/lib/format";
 
@@ -52,7 +53,7 @@ function ProductsPage() {
     !search.newArrivals &&
     !search.specialOffers &&
     Boolean(activeSection && sectionHasSubcategoryNav(activeSection.id));
-  const brands = useMemo(() => Array.from(new Set(products.map(p => p.brand))).sort(), [products]);
+  const brands = useMemo(() => getCatalogBrandNames(), []);
   const subs = useMemo(() => {
     if (!categorySelected) return [];
     const scoped = products.filter(p => p.category === search.category);
@@ -303,13 +304,10 @@ function ProductsPage() {
 
         <div>
           {showSubcategoryGrid && (
-            <h3 className="text-xl font-bold mb-2">
+            <h3 className="text-xl font-bold mb-4">
               {search.sub ? t("category_products_filtered") : t("category_products_heading")}
             </h3>
           )}
-          <p className="text-sm text-muted-foreground mb-4">
-            {formatNumber(filtered.length)} {t("products_found")}
-          </p>
 
           {filtered.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">

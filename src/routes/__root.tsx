@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
+import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { ProductsProvider } from "@/lib/products-context";
 import { ServiceRequestsProvider } from "@/lib/service-requests-context";
@@ -75,9 +76,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <head><HeadContent /></head>
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('erad-theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}}catch(e){}})();",
+          }}
+        />
+      </head>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
@@ -89,7 +98,8 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
+      <ThemeProvider>
+        <I18nProvider>
         <AuthProvider>
           <ProductsProvider>
             <ServiceRequestsProvider>
@@ -107,7 +117,8 @@ function RootComponent() {
             </ServiceRequestsProvider>
           </ProductsProvider>
         </AuthProvider>
-      </I18nProvider>
+        </I18nProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

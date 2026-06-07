@@ -1,33 +1,20 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { FileText, Images, ListChecks } from "lucide-react";
 import { SpecEditor } from "@/components/SpecEditor";
 import { ProductImageGalleryEditor } from "@/components/ProductImageGalleryEditor";
 import { getSubcategoryCatalogForSection } from "@/lib/subcategories";
-import { isGamingDesktop, isLaptopLikeSection, normalizeProduct, type Product, type SpecGroup } from "@/lib/products";
+import { isGamingDesktop, normalizeProduct, type Product, type SpecGroup } from "@/lib/products";
 import {
-  createGamingDesktopSpecTemplate,
-  createLaptopSpecTemplate,
-  mergeWithGamingDesktopTemplate,
-  mergeWithLaptopTemplate,
+  applySpecTemplateMerge,
+  getSpecTemplateKind,
+  resolveProductSpecTemplate,
 } from "@/lib/spec-templates";
 import { useProducts } from "@/lib/products-context";
 import { useI18n } from "@/lib/i18n";
 
-function resolveSpecTemplate(category: string, subcategory: string, existing: SpecGroup[]): SpecGroup[] {
-  if (isGamingDesktop(category, subcategory)) {
-    return existing.length ? mergeWithGamingDesktopTemplate(existing) : createGamingDesktopSpecTemplate();
-  }
-  if (isLaptopLikeSection(category)) {
-    return existing.length ? mergeWithLaptopTemplate(existing) : createLaptopSpecTemplate();
-  }
-  return existing;
-}
-
 function initialSpecs(initial: Product | null, category: string, subcategory: string): SpecGroup[] {
-  if (initial?.specs?.length) {
-    return resolveSpecTemplate(category, subcategory, initial.specs);
-  }
-  return resolveSpecTemplate(category, subcategory, []);
+  return resolveProductSpecTemplate(category, subcategory, initial?.specs ?? []);
 }
 
 function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
@@ -36,6 +23,33 @@ function Field({ label, children, className = "" }: { label: string; children: R
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">{label}</span>
       {children}
     </label>
+  );
+}
+
+function FormSection({
+  icon: Icon,
+  title,
+  subtitle,
+  children,
+}: {
+  icon: typeof FileText;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="sm:col-span-2 rounded-2xl border-2 border-border bg-subtle/25 overflow-hidden">
+      <div className="flex items-start gap-3 px-5 py-4 border-b border-border bg-card/80">
+        <div className="size-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+          <Icon className="size-5" />
+        </div>
+        <div>
+          <h3 className="font-bold text-lg leading-tight">{title}</h3>
+          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+        </div>
+      </div>
+      <div className="p-5 space-y-4">{children}</div>
+    </section>
   );
 }
 
@@ -64,6 +78,7 @@ export function ProductForm({
   const [subcategory, setSubcategory] = useState(defaultSubcategory);
   const subcategoryOptions = getSubcategoryCatalogForSection(category);
   const isGamingPc = isGamingDesktop(category, subcategory);
+  const specTemplateKind = getSpecTemplateKind(category, subcategory);
   const [overview, setOverview] = useState(initial?.overview ?? "");
   const [gallery, setGallery] = useState<string[]>(() =>
     initial?.gallery?.length ? initial.gallery : initial?.image ? [initial.image] : [],
@@ -71,32 +86,62 @@ export function ProductForm({
   const [overviewGallery, setOverviewGallery] = useState<string[]>(initial?.overviewGallery ?? []);
   const [specs, setSpecs] = useState<SpecGroup[]>(() => initialSpecs(initial, defaultCategory, defaultSubcategory));
 
-  const applySpecTemplate = (nextCategory: string, nextSubcategory: string, prev: SpecGroup[]) =>
-    resolveSpecTemplate(nextCategory, nextSubcategory, prev);
+  const specTemplateLabel = () => {
+    switch (specTemplateKind) {
+      case "gaming-pc":
+        return t("load_gaming_specs");
+      case "printer":
+        return t("load_printer_specs");
+      case "monitor":
+        return t("load_monitor_specs");
+      case "laptop":
+        return t("load_laptop_specs");
+      default:
+        return t("load_generic_specs");
+    }
+  };
+
+  const specTemplateHint = () => {
+    switch (specTemplateKind) {
+      case "gaming-pc":
+        return t("admin_gaming_specs_hint");
+      case "printer":
+        return t("admin_printer_specs_hint");
+      case "monitor":
+        return t("admin_monitor_specs_hint");
+      case "laptop":
+        return t("specs_hint");
+      default:
+        return t("admin_generic_specs_hint");
+    }
+  };
 
   const onCategoryChange = (next: string) => {
     setCategory(next);
     const nextSubs = getSubcategoryCatalogForSection(next);
     const nextSub = nextSubs[0]?.slug ?? "standard";
     setSubcategory(nextSub);
-    setSpecs(prev => applySpecTemplate(next, nextSub, prev));
+    setSpecs(prev => resolveProductSpecTemplate(next, nextSub, prev));
   };
 
   const onSubcategoryChange = (next: string) => {
     setSubcategory(next);
-    setSpecs(prev => applySpecTemplate(category, next, prev));
+    setSpecs(prev => resolveProductSpecTemplate(category, next, prev));
+  };
+
+  const loadSpecTemplate = () => {
+    setSpecs(prev => applySpecTemplateMerge(category, subcategory, prev));
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const filledSpecs = isLaptopLikeSection(category)
-      ? specs
-          .map(g => ({
-            ...g,
-            items: g.items.filter(item => item.value.trim() !== ""),
-          }))
-          .filter(g => g.items.length > 0)
-      : specs;
+    const filledSpecs = specs
+      .map(g => ({
+        ...g,
+        group: g.group.trim(),
+        items: g.items.filter(item => item.value.trim() !== ""),
+      }))
+      .filter(g => g.group && g.items.length > 0);
 
     const coverImage = gallery[0] ?? initial?.image ?? "";
     const selectedSub = subcategoryOptions.find(item => item.slug === subcategory) ?? subcategoryOptions[0];
@@ -198,45 +243,38 @@ export function ProductForm({
             </div>
           </label>
 
-          <Field label={t("overview_text")} className="sm:col-span-2">
-            <textarea value={overview} onChange={e => setOverview(e.target.value)} rows={3} className="input" />
-            {isGamingPc && (
-              <p className="text-xs text-muted-foreground mt-1.5">{t("admin_gaming_pc_overview_hint")}</p>
-            )}
-          </Field>
-
           <div className="sm:col-span-2 space-y-3">
             <h3 className="font-bold text-lg">{t("product_gallery")}</h3>
+            <p className="text-xs text-muted-foreground">{t("product_gallery_hint")}</p>
             <ProductImageGalleryEditor images={gallery} onChange={setGallery} variant="product" />
           </div>
 
-          <div className="sm:col-span-2 space-y-3">
-            <h3 className="font-bold text-lg">{t("overview_images")}</h3>
-            <ProductImageGalleryEditor images={overviewGallery} onChange={setOverviewGallery} variant="overview" />
-          </div>
+          <FormSection icon={FileText} title={t("overview")} subtitle={t("admin_form_overview_sub")}>
+            <Field label={t("overview_text")}>
+              <textarea value={overview} onChange={e => setOverview(e.target.value)} rows={4} className="input" />
+              {isGamingPc && (
+                <p className="text-xs text-muted-foreground mt-1.5">{t("admin_gaming_pc_overview_hint")}</p>
+              )}
+            </Field>
+          </FormSection>
 
-          {isLaptopLikeSection(category) && (
-            <div className="sm:col-span-2 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-bold text-lg">{t("specifications")}</h3>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSpecs(prev =>
-                      isGamingPc ? mergeWithGamingDesktopTemplate(prev) : mergeWithLaptopTemplate(prev),
-                    )
-                  }
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full border border-border hover:bg-accent transition"
-                >
-                  {isGamingPc ? t("load_gaming_specs") : t("load_laptop_specs")}
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {isGamingPc ? t("admin_gaming_specs_hint") : t("specs_hint")}
-              </p>
-              <SpecEditor specs={specs} onChange={setSpecs} />
+          <FormSection icon={Images} title={t("overview_images")} subtitle={t("overview_images_hint")}>
+            <ProductImageGalleryEditor images={overviewGallery} onChange={setOverviewGallery} variant="overview" />
+          </FormSection>
+
+          <FormSection icon={ListChecks} title={t("specifications")} subtitle={t("admin_form_specs_sub")}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground flex-1 min-w-[12rem]">{specTemplateHint()}</p>
+              <button
+                type="button"
+                onClick={loadSpecTemplate}
+                className="text-xs font-semibold px-3 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/5 transition shrink-0"
+              >
+                {specTemplateLabel()}
+              </button>
             </div>
-          )}
+            <SpecEditor specs={specs} onChange={setSpecs} />
+          </FormSection>
 
           <div className="sm:col-span-2 flex gap-2 justify-end pt-2 sticky bottom-0 bg-card pb-1">
             <button type="button" onClick={onClose} className="h-11 px-5 rounded-full border border-border font-semibold">

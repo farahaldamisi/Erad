@@ -3,7 +3,6 @@ import { getSectionLabel } from "@/lib/sections";
 import { getSectionSubcategoryCards, getSubcategoryLabel } from "@/lib/subcategories";
 import type { Product } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
-import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface CategorySubcategoryGridProps {
@@ -20,7 +19,6 @@ function SubcategoryCard({
   imageFallback,
   title,
   count,
-  countLabel,
   emptyLabel,
 }: {
   active: boolean;
@@ -29,7 +27,6 @@ function SubcategoryCard({
   imageFallback?: string;
   title: string;
   count: number;
-  countLabel: string;
   emptyLabel?: string;
 }) {
   return (
@@ -55,9 +52,6 @@ function SubcategoryCard({
         )}
       </div>
       <p className="font-bold text-xs sm:text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{title}</p>
-      <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
-        {formatNumber(count)} {countLabel}
-      </p>
     </button>
   );
 }
@@ -87,7 +81,6 @@ export function CategorySubcategoryGrid({
             image={section.image}
             title={t("category_all_types")}
             count={categoryTotal}
-            countLabel={t("products_found")}
           />
 
           {cards.map(card => (
@@ -99,7 +92,6 @@ export function CategorySubcategoryGrid({
               imageFallback={section.image}
               title={getSubcategoryLabel(card, lang)}
               count={card.count}
-              countLabel={t("products_found")}
               emptyLabel={t("no_products")}
             />
           ))}

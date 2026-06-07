@@ -11,6 +11,7 @@ import { maybeLogLowStockAlert } from "@/lib/stock-alerts";
 import { formatPrice } from "@/lib/currency";
 import { formatNumber } from "@/lib/format";
 import { getSectionLabel, sortSections } from "@/lib/sections";
+import { getCatalogBrandNames } from "@/lib/home-brands";
 import { useProducts } from "@/lib/products-context";
 import { useI18n } from "@/lib/i18n";
 
@@ -33,7 +34,7 @@ function AdminProductsPage() {
   const [filters, setFilters] = useState<ProductSearchParams>(emptyFilters);
 
   const sortedSections = useMemo(() => sortSections(sections), [sections]);
-  const brands = useMemo(() => Array.from(new Set(list.map(p => p.brand))).sort(), [list]);
+  const brands = useMemo(() => getCatalogBrandNames(), []);
 
   const filtered = useMemo(() => filterProducts(list, filters), [list, filters]);
   const grouped = useMemo(

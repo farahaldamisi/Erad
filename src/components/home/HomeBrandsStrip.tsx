@@ -9,7 +9,7 @@ function BrandLogo({ brand }: { brand: HomeBrandItem }) {
       to="/products"
       search={homeBrandSearch(brand)}
       title={brand.name}
-      className="group flex flex-1 min-w-0 items-center justify-center px-2 py-2 sm:px-3 sm:py-3 hover:bg-accent/40 transition rounded-xl"
+      className="group flex flex-1 min-w-0 items-center justify-center px-2 py-2 sm:px-3 sm:py-3 hover:bg-gray-100 transition rounded-xl"
     >
       <img
         src={brand.logo}
@@ -33,8 +33,8 @@ export function HomeBrandsStrip({ className }: { className?: string }) {
         <p className="text-sm text-muted-foreground mt-0.5">{t("home_shop_by_brand_sub")}</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
-        <div className="flex items-center divide-x divide-border overflow-x-auto">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-card overflow-hidden">
+        <div className="flex items-center divide-x divide-gray-200 overflow-x-auto">
           {homeBrands.map(brand => (
             <BrandLogo key={brand.id} brand={brand} />
           ))}

@@ -71,6 +71,38 @@
   --shadow-elegant: 0 30px 80px -30px oklch(0.15 0.02 20 / 0.25);
 }
 
+.dark {
+  --background: oklch(0.14 0.012 20);
+  --foreground: oklch(0.96 0.005 20);
+  --card: oklch(0.18 0.014 20);
+  --card-foreground: oklch(0.96 0.005 20);
+  --popover: oklch(0.18 0.014 20);
+  --popover-foreground: oklch(0.96 0.005 20);
+
+  --primary: oklch(0.62 0.22 25);
+  --primary-foreground: oklch(0.99 0 0);
+  --primary-glow: oklch(0.68 0.24 25);
+  --primary-deep: oklch(0.48 0.2 25);
+
+  --secondary: oklch(0.22 0.014 20);
+  --secondary-foreground: oklch(0.96 0.005 20);
+  --muted: oklch(0.22 0.014 20);
+  --muted-foreground: oklch(0.68 0.02 20);
+  --accent: oklch(0.24 0.03 25);
+  --accent-foreground: oklch(0.96 0.005 20);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.28 0.015 20);
+  --input: oklch(0.26 0.015 20);
+  --ring: oklch(0.62 0.22 25);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.62 0.22 25), oklch(0.48 0.2 25));
+  --gradient-subtle: linear-gradient(180deg, oklch(0.17 0.012 20), oklch(0.14 0.012 20));
+  --shadow-glow: 0 20px 60px -20px oklch(0.62 0.22 25 / 0.35);
+  --shadow-card: 0 4px 30px -8px oklch(0 0 0 / 0.35);
+  --shadow-elegant: 0 30px 80px -30px oklch(0 0 0 / 0.55);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html {
@@ -108,6 +140,9 @@
     background: oklch(1 0 0 / 0.7);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+  }
+  .dark .glass {
+    background: oklch(0.18 0.014 20 / 0.75);
   }
   .glass-dark {
     background: oklch(0.15 0.02 20 / 0.5);

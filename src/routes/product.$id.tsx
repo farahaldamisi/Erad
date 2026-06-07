@@ -287,9 +287,7 @@ function ProductPage() {
               )}
 
               {overviewImages.length > 0 ? (
-                <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2">
-                  <OverviewGalleryStack images={overviewImages} compact />
-                </div>
+                <OverviewGalleryStack images={overviewImages} compact />
               ) : (
                 !p.overview && !p.overviewAr && (
                   <p className="text-sm text-muted-foreground">{t("overview_no_images")}</p>

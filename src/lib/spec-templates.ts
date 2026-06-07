@@ -198,6 +198,164 @@ export function mergeWithGamingDesktopTemplate(existing: SpecGroup[]): SpecGroup
   return mergeWithTemplate(createGamingDesktopSpecTemplate(), existing, LEGACY_LAPTOP_SPEC_MAP);
 }
 
+/** Empty printer spec fields */
+export function createPrinterSpecTemplate(): SpecGroup[] {
+  const field = (label: string) => ({ label, value: "" });
+
+  return [
+    {
+      group: "Print",
+      items: [
+        field("Technology"),
+        field("Print Speed"),
+        field("Resolution"),
+        field("Duplex"),
+        field("First Page Out"),
+      ],
+    },
+    {
+      group: "Functions",
+      items: [field("Print"), field("Scan"), field("Copy"), field("Fax")],
+    },
+    {
+      group: "Connectivity",
+      items: [field("USB"), field("Network"), field("Wireless"), field("Mobile Printing")],
+    },
+    {
+      group: "Paper & Media",
+      items: [field("Input Capacity"), field("Output Capacity"), field("Paper Sizes"), field("Media Types")],
+    },
+    {
+      group: "Physical Specifications",
+      items: [field("Dimensions"), field("Weight")],
+    },
+    {
+      group: "Warranty",
+      items: [field("Warranty")],
+    },
+  ];
+}
+
+export function mergeWithPrinterTemplate(existing: SpecGroup[]): SpecGroup[] {
+  return mergeWithTemplate(createPrinterSpecTemplate(), existing);
+}
+
+/** Empty monitor spec fields */
+export function createMonitorSpecTemplate(): SpecGroup[] {
+  const field = (label: string) => ({ label, value: "" });
+
+  return [
+    {
+      group: "Display",
+      items: [
+        field("Screen Size"),
+        field("Panel Type"),
+        field("Resolution"),
+        field("Refresh Rate"),
+        field("Aspect Ratio"),
+        field("Brightness"),
+        field("Contrast Ratio"),
+        field("Response Time"),
+      ],
+    },
+    {
+      group: "Connectivity",
+      items: [field("HDMI"), field("DisplayPort"), field("USB-C"), field("Audio Out")],
+    },
+    {
+      group: "Features",
+      items: [field("VESA Mount"), field("HDR"), field("Adaptive Sync"), field("Built-in Speakers")],
+    },
+    {
+      group: "Physical Specifications",
+      items: [field("Dimensions"), field("Weight")],
+    },
+    {
+      group: "Warranty",
+      items: [field("Warranty")],
+    },
+  ];
+}
+
+export function mergeWithMonitorTemplate(existing: SpecGroup[]): SpecGroup[] {
+  return mergeWithTemplate(createMonitorSpecTemplate(), existing);
+}
+
+/** Generic template for accessories, components, network, etc. */
+export function createGenericSpecTemplate(): SpecGroup[] {
+  const field = (label: string) => ({ label, value: "" });
+
+  return [
+    {
+      group: "Specifications",
+      items: [field("Type"), field("Model"), field("Key Feature 1"), field("Key Feature 2")],
+    },
+    {
+      group: "Details",
+      items: [field("Compatibility"), field("Material"), field("Dimensions"), field("Weight")],
+    },
+    {
+      group: "Warranty",
+      items: [field("Warranty")],
+    },
+  ];
+}
+
+export function mergeWithGenericTemplate(existing: SpecGroup[]): SpecGroup[] {
+  return mergeWithTemplate(createGenericSpecTemplate(), existing);
+}
+
+export type SpecTemplateKind = "laptop" | "gaming-pc" | "printer" | "monitor" | "generic";
+
+export function getSpecTemplateKind(category: string, subcategory: string): SpecTemplateKind {
+  if (category === "desktops" && subcategory === "gaming") return "gaming-pc";
+  if (category === "laptops" || category === "desktops") return "laptop";
+  if (category === "printers") return "printer";
+  if (category === "monitors") return "monitor";
+  return "generic";
+}
+
+export function resolveProductSpecTemplate(
+  category: string,
+  subcategory: string,
+  existing: SpecGroup[],
+): SpecGroup[] {
+  if (existing.length) {
+    return applySpecTemplateMerge(category, subcategory, existing);
+  }
+  switch (getSpecTemplateKind(category, subcategory)) {
+    case "gaming-pc":
+      return createGamingDesktopSpecTemplate();
+    case "laptop":
+      return createLaptopSpecTemplate();
+    case "printer":
+      return createPrinterSpecTemplate();
+    case "monitor":
+      return createMonitorSpecTemplate();
+    default:
+      return createGenericSpecTemplate();
+  }
+}
+
+export function applySpecTemplateMerge(
+  category: string,
+  subcategory: string,
+  existing: SpecGroup[],
+): SpecGroup[] {
+  switch (getSpecTemplateKind(category, subcategory)) {
+    case "gaming-pc":
+      return mergeWithGamingDesktopTemplate(existing);
+    case "laptop":
+      return mergeWithLaptopTemplate(existing);
+    case "printer":
+      return mergeWithPrinterTemplate(existing);
+    case "monitor":
+      return mergeWithMonitorTemplate(existing);
+    default:
+      return mergeWithGenericTemplate(existing);
+  }
+}
+
 /** Sample laptop specs for seed products and demos. */
 export function createSampleLaptopSpecs(): SpecGroup[] {
   const set = (group: string, label: string, value: string) => ({ group, label, value });

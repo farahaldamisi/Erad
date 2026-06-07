@@ -14,24 +14,28 @@ export function OverviewGalleryStack({
 
   if (compact) {
     return (
-      <div className="flex flex-col gap-3 w-full">
-        {images.map((src, i) => (
-          <motion.div
-            key={`${src.slice(0, 40)}-${i}`}
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-20px" }}
-            transition={{ duration: 0.35, delay: i * 0.05 }}
-            className="w-full rounded-xl border border-border bg-subtle overflow-hidden shadow-card"
-          >
-            <img
-              src={src}
-              alt=""
-              loading={i === 0 ? "eager" : "lazy"}
-              className="w-full max-h-36 sm:max-h-44 object-contain p-3 mx-auto"
-            />
-          </motion.div>
-        ))}
+      <div className="w-full max-w-6xl mx-auto px-6 sm:px-10 md:px-16 lg:px-20 xl:px-28">
+        <div className="flex flex-col gap-6 sm:gap-8">
+          {images.map((src, i) => (
+            <motion.div
+              key={`${src.slice(0, 40)}-${i}`}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-20px" }}
+              transition={{ duration: 0.35, delay: i * 0.05 }}
+              className="w-full rounded-2xl border border-border bg-subtle/50 overflow-hidden shadow-card"
+            >
+              <div className="flex items-center justify-center py-10 sm:py-14 md:py-16 px-6 sm:px-10 md:px-14">
+                <img
+                  src={src}
+                  alt=""
+                  loading={i === 0 ? "eager" : "lazy"}
+                  className="w-full max-w-4xl mx-auto h-auto max-h-[280px] sm:max-h-[380px] md:max-h-[480px] object-contain"
+                />
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     );
   }

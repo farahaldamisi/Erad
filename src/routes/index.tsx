@@ -76,17 +76,13 @@ function Home() {
       <section className="container mx-auto px-4 pt-6 pb-8">
         <HomeCategoryBar className="mb-4" />
 
-        <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-4">
+        <div className="grid lg:grid-cols-[240px_minmax(0,1fr)] gap-4">
           <HomeCategorySidebar sections={featuredSections} className="hidden lg:flex" />
           <HomeHeroCarousel />
         </div>
 
-        <div className="lg:hidden mt-4">
-          <HomeCategorySidebar sections={featuredSections} />
-        </div>
-
-        <HomeGamingPcSection className="mt-8" />
-        <HomeBrandsStrip className="mt-6" />
+        <HomeGamingPcSection className="mt-10" />
+        <HomeBrandsStrip className="mt-8" />
         <HomeNewArrivalsSection className="mt-8" />
       </section>
 
