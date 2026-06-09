@@ -27,14 +27,14 @@ const emptyFilters: ProductSearchParams = {
 
 function AdminProductsPage() {
   const { t, lang } = useI18n();
-  const { products: list, setProducts: setList, sections } = useProducts();
+  const { products: list, setProducts: setList, sections, homeBrands } = useProducts();
   const [showForm, setShowForm] = useState(false);
   const [edit, setEdit] = useState<Product | null>(null);
   const [addSectionId, setAddSectionId] = useState<string | undefined>();
   const [filters, setFilters] = useState<ProductSearchParams>(emptyFilters);
 
   const sortedSections = useMemo(() => sortSections(sections), [sections]);
-  const brands = useMemo(() => getCatalogBrandNames(), []);
+  const brands = useMemo(() => getCatalogBrandNames(homeBrands), [homeBrands]);
 
   const filtered = useMemo(() => filterProducts(list, filters), [list, filters]);
   const grouped = useMemo(

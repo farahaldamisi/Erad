@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { homeBrandSearch, homeBrands, type HomeBrandItem } from "@/lib/home-brands";
+import { useMemo } from "react";
+import { homeBrandSearch, sortHomeBrands, type HomeBrandItem } from "@/lib/home-brands";
+import { useProducts } from "@/lib/products-context";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +27,10 @@ function BrandLogo({ brand }: { brand: HomeBrandItem }) {
 
 export function HomeBrandsStrip({ className }: { className?: string }) {
   const { t } = useI18n();
+  const { homeBrands } = useProducts();
+  const brands = useMemo(() => sortHomeBrands(homeBrands), [homeBrands]);
+
+  if (brands.length === 0) return null;
 
   return (
     <section className={cn("space-y-4", className)}>
@@ -35,7 +41,7 @@ export function HomeBrandsStrip({ className }: { className?: string }) {
 
       <div className="rounded-2xl border border-gray-200 bg-white shadow-card overflow-hidden">
         <div className="flex items-center divide-x divide-gray-200 overflow-x-auto">
-          {homeBrands.map(brand => (
+          {brands.map(brand => (
             <BrandLogo key={brand.id} brand={brand} />
           ))}
         </div>

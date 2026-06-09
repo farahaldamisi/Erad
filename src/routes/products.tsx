@@ -39,7 +39,7 @@ export const Route = createFileRoute("/products")({
 });
 
 function ProductsPage() {
-  const { products, sections } = useProducts();
+  const { products, sections, homeBrands } = useProducts();
   const search = Route.useSearch();
   const nav = Route.useNavigate();
   const { t, lang } = useI18n();
@@ -53,7 +53,7 @@ function ProductsPage() {
     !search.newArrivals &&
     !search.specialOffers &&
     Boolean(activeSection && sectionHasSubcategoryNav(activeSection.id));
-  const brands = useMemo(() => getCatalogBrandNames(), []);
+  const brands = useMemo(() => getCatalogBrandNames(homeBrands), [homeBrands]);
   const subs = useMemo(() => {
     if (!categorySelected) return [];
     const scoped = products.filter(p => p.category === search.category);

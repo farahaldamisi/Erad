@@ -11,7 +11,9 @@ import {
   Mail,
   Package,
   Phone,
+  Presentation,
   ShoppingBag,
+  Tag,
   Users,
   Wrench,
 } from "lucide-react";
@@ -34,6 +36,8 @@ const navItems: {
     | "admin_overview"
     | "admin_notifications"
     | "admin_sections"
+    | "admin_hero"
+    | "admin_brands"
     | "nav_products"
     | "recent_orders"
     | "registered_users"
@@ -45,6 +49,8 @@ const navItems: {
   { to: "/admin", key: "admin_overview", icon: LayoutDashboard, exact: true },
   { to: "/admin/notifications", key: "admin_notifications", icon: Bell },
   { to: "/admin/sections", key: "admin_sections", icon: FolderTree },
+  { to: "/admin/hero", key: "admin_hero", icon: Presentation },
+  { to: "/admin/brands", key: "admin_brands", icon: Tag },
   { to: "/admin/products", key: "nav_products", icon: Package },
   { to: "/admin/orders", key: "recent_orders", icon: ShoppingBag },
   { to: "/admin/users", key: "registered_users", icon: Users },
